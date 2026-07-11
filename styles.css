@@ -3793,3 +3793,74 @@ select.form-input {
     .glass-display .display-result { font-size: 40px; }
     .chrome-title { display: none; }
 }
+
+/* =========================================================
+   GLASS ACROSS MODULES v4 — frosted cards + hero aurora
+   Translucent glass only (NO backdrop-filter on these cards:
+   they sit inside .converter-wrapper which already has one,
+   and nested backdrop-filter renders black in Chromium).
+   ========================================================= */
+
+/* Glass container cards */
+.converter-card,
+.chart-card,
+.presets-section,
+.schedule-section,
+.calendar-section,
+.disclaimer-card,
+.ai-wrapper,
+.history-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)), rgba(17,22,42,0.72);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 16px 38px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+.disclaimer-card.warning {
+    background: linear-gradient(180deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02)), rgba(17,22,42,0.72);
+    border-color: rgba(255,255,255,0.10);
+    border-left: 4px solid var(--accent-warning);
+}
+
+/* Lightweight glass item cards */
+.result-card,
+.rate-card, .conversion-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)), rgba(22,27,50,0.72);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.result-card:hover,
+.rate-card:hover, .conversion-card:hover {
+    border-color: rgba(99,102,241,0.5);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+/* Hero cards — accent glass + drifting aurora (pure background layers = compositor-safe) */
+.result-card-primary {
+    background-image:
+        radial-gradient(circle 130px, rgba(99,102,241,0.5), transparent 66%),
+        linear-gradient(135deg, rgba(99,102,241,0.24), rgba(139,92,246,0.12));
+    background-repeat: no-repeat;
+    background-size: 260px 260px, cover;
+    background-position: 112% -34%, center;
+    background-color: rgba(16,21,40,0.6);
+    border: 1px solid rgba(99,102,241,0.45);
+    animation: heroAurora 13s ease-in-out infinite;
+}
+.exchange-rate, .conversion-formula {
+    background-image:
+        radial-gradient(circle 120px, rgba(236,72,153,0.4), transparent 66%),
+        linear-gradient(135deg, rgba(99,102,241,0.12), rgba(236,72,153,0.06));
+    background-repeat: no-repeat;
+    background-size: 240px 240px, cover;
+    background-position: 110% -30%, center;
+    background-color: rgba(16,21,40,0.55);
+    border: 1px solid rgba(99,102,241,0.22);
+    animation: heroAurora 15s ease-in-out infinite;
+}
+@keyframes heroAurora {
+    0%, 100% { background-position: 112% -34%, center; }
+    50%      { background-position: 55% 125%, center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .result-card-primary, .exchange-rate, .conversion-formula { animation: none; }
+}
