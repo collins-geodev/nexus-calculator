@@ -487,21 +487,21 @@
                         </svg>
                     </div>
                     <h2>AI Math Assistant</h2>
-                    <p class="ai-subtitle">Ask me anything about math, conversions, or calculations</p>
+                    <p class="ai-subtitle">Complex math, everyday problems &amp; conversions — solved instantly, offline</p>
                 </div>
 
                 <div class="ai-chat" id="aiChat">
                     <div class="ai-message ai-bot">
                         <div class="ai-avatar">AI</div>
                         <div class="ai-bubble">
-                            <p>Hi! I'm the <strong>Nexus AI Assistant</strong>, crafted by <em>Collins Tochukwu Anyanwu</em>. I can help with:</p>
+                            <p>Hi! I'm the <strong>Nexus AI Assistant</strong>, crafted by <em>Collins Tochukwu Anyanwu</em>. I solve complex math &amp; everyday problems — offline:</p>
                             <ul>
-                                <li>🧮 Natural language math: <em>"what is 15% of 200"</em></li>
-                                <li>💱 Conversions: <em>"convert 100 dollars to euros"</em></li>
-                                <li>📏 Units: <em>"how many meters in 5 feet"</em></li>
-                                <li>📊 Statistics: <em>"average of 10, 20, 30"</em></li>
-                                <li>🔢 Formulas: <em>"area of circle radius 5"</em></li>
-                                <li>💡 Explanations: <em>"explain quadratic formula"</em></li>
+                                <li>🧮 Math &amp; algebra: <em>"solve x² - 5x + 6 = 0"</em></li>
+                                <li>📊 Statistics: <em>"median of 4, 8, 15, 16, 23"</em></li>
+                                <li>🔢 Numbers: <em>"is 97 prime"</em>, <em>"255 to hex"</em></li>
+                                <li>💰 Money: <em>"20% off $80"</em>, <em>"split $90 among 3"</em></li>
+                                <li>🗓️ Everyday: <em>"BMI 70kg 1.75m"</em>, <em>"days until Dec 25"</em></li>
+                                <li>💱 Convert: <em>"100 USD to EUR"</em>, <em>"10 miles to km"</em></li>
                             </ul>
                         </div>
                     </div>
@@ -524,6 +524,12 @@
                 </div>
 
                 <div class="ai-suggestions">
+                    <button class="suggestion-chip" data-query="solve x^2 - 5x + 6 = 0">Solve x²−5x+6=0</button>
+                    <button class="suggestion-chip" data-query="median of 4, 8, 15, 16, 23, 42">Median</button>
+                    <button class="suggestion-chip" data-query="is 97 prime">Is 97 prime?</button>
+                    <button class="suggestion-chip" data-query="BMI for 70 kg and 1.75 m">BMI</button>
+                    <button class="suggestion-chip" data-query="split 87.50 among 4 people with 18% tip">Split bill</button>
+                    <button class="suggestion-chip" data-query="days until December 25">Days until Xmas</button>
                     <button class="suggestion-chip" data-query="What is 15% of 250?">15% of 250</button>
                     <button class="suggestion-chip" data-query="Convert 100 USD to EUR">100 USD → EUR</button>
                     <button class="suggestion-chip" data-query="How many kilometers in 10 miles?">10 mi → km</button>
@@ -1244,34 +1250,53 @@
                 <!-- About Developer Section -->
                 <div class="about-section">
                     <h4 class="about-title">About the Developer</h4>
-                    <div class="developer-card">
-                        <div class="developer-avatar">
-                            <svg viewBox="0 0 80 80" width="64" height="64">
-                                <defs>
-                                    <linearGradient id="devGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="var(--accent-primary)"/>
-                                        <stop offset="100%" stop-color="var(--accent-secondary)"/>
-                                    </linearGradient>
-                                </defs>
-                                <circle cx="40" cy="40" r="38" fill="url(#devGrad)" class="dev-avatar-bg"/>
-                                <text x="40" y="52" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="28" font-weight="700">CA</text>
-                            </svg>
-                        </div>
-                        <div class="developer-info">
-                            <div class="developer-name">Collins Tochukwu Anyanwu</div>
-                            <div class="developer-title">
-                                <span class="title-badge">Tech Guru</span>
-                                <span class="title-badge ai-badge">AI Enthusiast</span>
+                    <div class="dev-profile">
+                        <div class="dev-profile-glow" aria-hidden="true"></div>
+                        <div class="dev-profile-head">
+                            <div class="developer-avatar">
+                                <svg class="dev-avatar-ring" viewBox="0 0 88 88" width="82" height="82" fill="none" aria-hidden="true">
+                                    <defs>
+                                        <linearGradient id="devRingGrad" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stop-color="var(--accent-primary)"/>
+                                            <stop offset="100%" stop-color="var(--accent-secondary)"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <circle cx="44" cy="44" r="42" stroke="url(#devRingGrad)" stroke-width="2" stroke-dasharray="5 8" stroke-linecap="round"/>
+                                </svg>
+                                <svg class="dev-avatar-face" viewBox="0 0 80 80" width="60" height="60" aria-hidden="true">
+                                    <defs>
+                                        <linearGradient id="devGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="var(--accent-primary)"/>
+                                            <stop offset="100%" stop-color="var(--accent-secondary)"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <circle cx="40" cy="40" r="38" fill="url(#devGrad)" class="dev-avatar-bg"/>
+                                    <text x="40" y="52" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="28" font-weight="700">CA</text>
+                                </svg>
+                                <span class="dev-status" title="Open to collaborate"></span>
+                            </div>
+                            <div class="developer-info">
+                                <div class="developer-name">Collins Tochukwu Anyanwu</div>
+                                <div class="dev-tagline">Software Engineer · AI &amp; Web Developer</div>
+                                <div class="developer-title">
+                                    <span class="title-badge">Tech Guru</span>
+                                    <span class="title-badge ai-badge">AI Enthusiast</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <p class="developer-bio">
-                        Collins Tochukwu Anyanwu is a seasoned <strong>tech guru</strong> and passionate <strong>AI enthusiast</strong> with a deep love for building intelligent, user-centric applications. With broad experience across web development, mobile engineering, and cutting-edge AI integration, Collins blends technical mastery with creative vision to craft tools that make technology feel effortless.
-                    </p>
-                    <p class="developer-bio">
-                        When he's not architecting software, he's exploring the frontier of machine learning, experimenting with generative AI, and sharing knowledge with the developer community. <em>Nexus Calculator</em> is a reflection of his commitment to marrying practical utility with modern, intuitive design.
-                    </p>
-                    <div class="developer-links">
+
+                        <div class="dev-skills">
+                            <span class="skill-chip">Web Development</span>
+                            <span class="skill-chip">Mobile Engineering</span>
+                            <span class="skill-chip">AI / Machine Learning</span>
+                            <span class="skill-chip">UI / UX Design</span>
+                        </div>
+
+                        <p class="developer-bio">
+                            Collins is a <strong>software engineer</strong> and <strong>AI enthusiast</strong> who crafts intelligent, user-centric tools across web and mobile. He pairs deep technical mastery with a designer's eye — turning complex problems into experiences that feel effortless. <em>Nexus Calculator</em> reflects that pursuit: practical utility meeting modern, intuitive design.
+                        </p>
+
+                        <div class="developer-links">
                         <a href="https://github.com/collins-geodev" target="_blank" rel="noopener" class="dev-link">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                                 <path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.54-1.38-1.33-1.75-1.33-1.75-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22l-.01 3.29c0 .32.22.7.82.58A12 12 0 0 0 12 .3"/>
@@ -1285,9 +1310,10 @@
                             </svg>
                             Email
                         </a>
+                        </div>
                     </div>
                     <div class="app-version">
-                        <span>Nexus Calculator v2.0.0</span>
+                        <span>Nexus Calculator <strong>v2.0.0</strong></span>
                         <span class="version-dot">•</span>
                         <span>© 2026 Collins Tochukwu Anyanwu</span>
                     </div>

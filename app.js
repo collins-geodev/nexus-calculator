@@ -1726,6 +1726,166 @@ const AI = {
             };
         }
 
+        // ===== Equations: linear & quadratic =====
+        if (q.includes('=') && /x/i.test(q)) {
+            const eq = this.solveEquation(query);
+            if (eq) return eq;
+        }
+
+        // ===== Statistics: median, mode, std dev, variance, range, min, max =====
+        const statMatch = q.match(/\b(median|mode|standard deviation|std\s*dev(?:iation)?|variance|range|min(?:imum)?|max(?:imum)?)\b[^\d-]*(.+)/i);
+        if (statMatch) {
+            const nums = this.parseNums(statMatch[2]);
+            if (nums.length >= 1) {
+                const s = this.stats(nums);
+                const k = statMatch[1].toLowerCase().replace(/\s+/g, '');
+                let val;
+                if (k.includes('median')) val = this.fmt(s.median);
+                else if (k.includes('mode')) val = s.modes.length ? s.modes.join(', ') : 'no mode (all values unique)';
+                else if (k.startsWith('std') || k.includes('standarddeviation')) val = `${this.fmt(s.stdSample)} (sample) · ${this.fmt(s.stdPop)} (population)`;
+                else if (k.includes('variance')) val = `${this.fmt(s.varSample)} (sample) · ${this.fmt(s.varPop)} (population)`;
+                else if (k.includes('range')) val = `${this.fmt(s.range)} (min ${this.fmt(s.min)}, max ${this.fmt(s.max)})`;
+                else if (k.startsWith('min')) val = this.fmt(s.min);
+                else if (k.startsWith('max')) val = this.fmt(s.max);
+                return { message: `${statMatch[1]} of ${nums.length} value${nums.length === 1 ? '' : 's'} (${nums.join(', ')}):`, result: val };
+            }
+        }
+        const statsSummary = q.match(/(?:full\s+)?(?:stats|statistics|summar(?:y|ize|ise))\s+(?:of|for)?\s*(.+)/i);
+        if (statsSummary) {
+            const nums = this.parseNums(statsSummary[1]);
+            if (nums.length >= 2) {
+                const s = this.stats(nums);
+                return { message: `Statistics for ${nums.length} values:`, result: `Mean ${this.fmt(s.mean)} · Median ${this.fmt(s.median)} · Mode ${s.modes.length ? s.modes.join('/') : '—'} · Std ${this.fmt(s.stdSample)} · Range ${this.fmt(s.range)} · Min ${this.fmt(s.min)} · Max ${this.fmt(s.max)} · Sum ${this.fmt(s.sum)}` };
+            }
+        }
+
+        // ===== Combinations / permutations =====
+        const combMatch = q.match(/(\d+)\s+choose\s+(\d+)/i) || q.match(/(\d+)\s*c\s*(\d+)/i) || q.match(/combinations?\s+(?:of\s+)?(\d+)\s+(?:and\s+|,\s*)?(\d+)/i);
+        if (combMatch && /(choose|combination|ncr|\d+\s*c\s*\d+)/i.test(q)) {
+            const n = +combMatch[1], r = +combMatch[2];
+            return { message: `Combinations — ways to choose ${r} from ${n} (order ignored):`, result: `C(${n}, ${r}) = ${this.nCr(n, r).toLocaleString()}` };
+        }
+        const permMatch = q.match(/(\d+)\s*p\s*(\d+)/i) || q.match(/permutations?\s+(?:of\s+)?(\d+)\s+(?:and\s+|,\s*)?(\d+)/i);
+        if (permMatch && /(permutation|npr|\d+\s*p\s*\d+)/i.test(q)) {
+            const n = +permMatch[1], r = +permMatch[2];
+            return { message: `Permutations — ordered arrangements of ${r} from ${n}:`, result: `P(${n}, ${r}) = ${this.nPr(n, r).toLocaleString()}` };
+        }
+
+        // ===== GCD / LCM =====
+        const gcdMatch = q.match(/\b(gcd|hcf|greatest common (?:divisor|factor)|lcm|least common multiple|lowest common multiple)\b[^\d]*(.+)/i);
+        if (gcdMatch) {
+            const nums = this.parseNums(gcdMatch[2]).map(n => Math.abs(Math.trunc(n))).filter(n => n > 0);
+            if (nums.length >= 2) {
+                const isLcm = /lcm|multiple/i.test(gcdMatch[1]);
+                const val = nums.reduce((a, b) => isLcm ? this.lcm(a, b) : this.gcd(a, b));
+                return { message: `${isLcm ? 'LCM' : 'GCD'} of ${nums.join(', ')}:`, result: val.toLocaleString() };
+            }
+        }
+
+        // ===== Prime check / prime factorization =====
+        const isPrimeMatch = q.match(/\bis\s+(\d+)\s+(?:a\s+)?prime/i);
+        if (isPrimeMatch) {
+            const n = +isPrimeMatch[1];
+            return { message: `Is ${n} a prime number?`, result: this.isPrime(n) ? `Yes — ${n} is prime.` : `No — ${n} = ${this.primeFactors(n).join(' × ')}` };
+        }
+        const factorizeMatch = q.match(/(?:prime\s*factor(?:i[sz]e|i[sz]ation|s)?|factor(?:i[sz]e|s)?)\s+(?:of\s+)?(\d+)/i);
+        if (factorizeMatch) {
+            const n = +factorizeMatch[1];
+            if (n > 1) {
+                const pf = this.primeFactors(n);
+                return { message: `Prime factorization of ${n}:`, result: pf.join(' × ') + (pf.length === 1 ? ' (prime)' : '') };
+            }
+        }
+
+        // ===== Base conversion =====
+        const baseMatch = q.match(/(?:convert\s+)?(0x[0-9a-f]+|0b[01]+|\d+)\s*(?:to|in|into|as)\s*(binary|hex(?:adecimal)?|octal|decimal)\b/i);
+        if (baseMatch) {
+            const tok = baseMatch[1].toLowerCase();
+            const dec = tok.startsWith('0x') ? parseInt(tok, 16) : tok.startsWith('0b') ? parseInt(tok.slice(2), 2) : parseInt(tok, 10);
+            const target = baseMatch[2].toLowerCase();
+            if (!isNaN(dec)) {
+                const out = target.startsWith('bin') ? '0b' + dec.toString(2)
+                    : target.startsWith('hex') ? '0x' + dec.toString(16).toUpperCase()
+                    : target.startsWith('oct') ? '0o' + dec.toString(8)
+                    : dec.toLocaleString();
+                return { message: `Base conversion:`, result: `${dec.toLocaleString()} (decimal) → ${out}` };
+            }
+        }
+
+        // ===== BMI =====
+        if (/\bbmi\b/i.test(q)) {
+            const kg = q.match(/(\d+\.?\d*)\s*(?:kg|kilo)/i);
+            const lb = q.match(/(\d+\.?\d*)\s*(?:lbs?|pounds?)/i);
+            const cm = q.match(/(\d+\.?\d*)\s*cm/i);
+            const m = q.match(/(\d+\.?\d*)\s*(?:m|meters?)\b/i);
+            const ftin = q.match(/(\d+)\s*(?:ft|foot|feet|')\s*(\d+)?/i);
+            const wKg = kg ? +kg[1] : lb ? +lb[1] * 0.453592 : null;
+            const hM = cm ? +cm[1] / 100 : m ? +m[1] : ftin ? (+ftin[1] * 12 + (+ftin[2] || 0)) * 0.0254 : null;
+            if (wKg && hM) {
+                const bmi = wKg / (hM * hM);
+                const cat = bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal weight' : bmi < 30 ? 'Overweight' : 'Obese';
+                return { message: `BMI for ${this.fmt(wKg, 1)} kg &amp; ${this.fmt(hM, 2)} m — <em>weight ÷ height²</em>:`, result: `${this.fmt(bmi, 1)} — ${cat}` };
+            }
+        }
+
+        // ===== Discount =====
+        const discMatch = q.match(/(\d+\.?\d*)\s*%?\s*(?:off|discount)\s*(?:on|of|from)?\s*[₦$€£¥]?\s*([\d,]+\.?\d*)/i);
+        if (discMatch && /(off|discount)/i.test(q)) {
+            const pct = +discMatch[1], price = +discMatch[2].replace(/,/g, '');
+            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '';
+            const save = price * pct / 100;
+            return { message: `${pct}% off ${sym}${price.toLocaleString()}:`, result: `Save ${sym}${this.fmt(save, 2)} → pay ${sym}${this.fmt(price - save, 2)}` };
+        }
+
+        // ===== Add tax / VAT =====
+        const addTaxMatch = q.match(/add\s+(\d+\.?\d*)\s*%\s*(?:sales\s+)?(?:tax|vat)?\s*(?:to|on)\s*[₦$€£¥]?\s*([\d,]+\.?\d*)/i);
+        if (addTaxMatch) {
+            const pct = +addTaxMatch[1], base = +addTaxMatch[2].replace(/,/g, '');
+            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '';
+            const tax = base * pct / 100;
+            return { message: `Adding ${pct}% to ${sym}${base.toLocaleString()}:`, result: `Tax ${sym}${this.fmt(tax, 2)} → total ${sym}${this.fmt(base + tax, 2)}` };
+        }
+
+        // ===== Split bill (with optional tip) =====
+        const splitMatch = q.match(/split\s+[₦$€£¥]?\s*([\d,]+\.?\d*)\s*(?:among|between|by|with|for)?\s*(\d+)\s*(?:people|persons?|ways|friends|of us)?/i);
+        if (splitMatch) {
+            const bill = +splitMatch[1].replace(/,/g, ''), people = Math.max(1, +splitMatch[2]);
+            const tipM = q.match(/(\d+\.?\d*)\s*%\s*tip/i); const tipPct = tipM ? +tipM[1] : 0;
+            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '$';
+            const total = bill * (1 + tipPct / 100);
+            return { message: `Splitting ${sym}${bill.toLocaleString()}${tipPct ? ` + ${tipPct}% tip` : ''} among ${people}:`, result: `Total ${sym}${this.fmt(total, 2)} → ${sym}${this.fmt(total / people, 2)} each` };
+        }
+
+        // ===== Percentage change / increase / decrease =====
+        const pctChg = q.match(/(?:percent(?:age)?\s+)?(?:change|difference)\s+from\s+(-?\d+\.?\d*)\s+to\s+(-?\d+\.?\d*)/i);
+        if (pctChg) {
+            const a = +pctChg[1], b = +pctChg[2];
+            const chg = a === 0 ? NaN : (b - a) / Math.abs(a) * 100;
+            return { message: `Percentage change from ${a} to ${b}:`, result: isNaN(chg) ? 'undefined (base is 0)' : `${chg >= 0 ? '+' : ''}${this.fmt(chg, 2)}% (${chg >= 0 ? 'increase' : 'decrease'})` };
+        }
+        const incDec = q.match(/(increase|raise|grow|decrease|reduce|lower)\s+[₦$€£¥]?\s*([\d,]+\.?\d*)\s+by\s+(\d+\.?\d*)\s*%/i);
+        if (incDec) {
+            const dir = /incre|raise|grow/i.test(incDec[1]) ? 1 : -1;
+            const base = +incDec[2].replace(/,/g, ''), pct = +incDec[3];
+            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '';
+            const delta = base * pct / 100;
+            return { message: `${dir > 0 ? 'Increase' : 'Decrease'} ${sym}${base.toLocaleString()} by ${pct}%:`, result: `${sym}${this.fmt(base + dir * delta, 2)} (${dir > 0 ? '+' : '−'}${sym}${this.fmt(delta, 2)})` };
+        }
+
+        // ===== Speed / distance / time =====
+        const sdt = q.match(/(?:how\s+long|time\s+to\s+travel|travel).*?(\d+\.?\d*)\s*(km|kilometers?|miles?|mi)\b.*?(?:at|@)\s*(\d+\.?\d*)\s*(km\/?h|kmph|mph)/i);
+        if (sdt) {
+            const dist = +sdt[1], speed = +sdt[3];
+            if (speed > 0) {
+                const hours = dist / speed, h = Math.floor(hours), min = Math.round((hours - h) * 60);
+                return { message: `Time to cover ${dist} ${sdt[2]} at ${speed} ${sdt[4]}:`, result: `${this.fmt(hours, 3)} hours (${h}h ${min}m)` };
+            }
+        }
+
+        // ===== Dates & age =====
+        const dateRes = this.handleDates(q);
+        if (dateRes) return dateRes;
+
         // Percentage
         const pctMatch = q.match(/(\d+\.?\d*)\s*(?:%|percent)\s*of\s*(\d+\.?\d*)/);
         if (pctMatch) {
@@ -1832,55 +1992,35 @@ const AI = {
             };
         }
 
-        // Explanations
-        if (q.includes('explain') || q.includes('what is')) {
+        // Factorial (before explanations so "5!" isn't swallowed)
+        const factMatch = q.match(/(\d+)\s*!|factorial\s+of\s+(\d+)|(\d+)\s+factorial/i);
+        if (factMatch) {
+            const n = parseInt(factMatch[1] || factMatch[2] || factMatch[3], 10);
+            return { message: `${n}! = ${n} × ${n - 1} × … × 1`, result: Calculator.factorial(n).toLocaleString() };
+        }
+
+        // Robust math evaluation: functions, powers, roots, logs, constants, factorials
+        const mathEval = this.safeMath(query);
+        if (mathEval.ok) {
+            const shown = query.replace(/[<>&]/g, ' ').replace(/\b(what\s+is|whats|what's|calculate|compute|evaluate)\b/gi, '').replace(/[=?]/g, '').trim();
+            return { message: `Result of <em>${shown || 'the expression'}</em>:`, result: this.fmt(mathEval.val, 6) };
+        }
+
+        // Explanations — only for known topics (never swallows a calculation)
+        if (/\bexplain\b/.test(q) || /\b(quadratic|pythagorean|pi|euler|prime|factorial|logarithm|derivative|integral)\b/.test(q)) {
             return this.getExplanation(q);
         }
 
-        // Factorial
-        const factMatch = q.match(/(?:factorial\s+of\s+|(\d+)\s*!)/);
-        if (factMatch) {
-            const n = parseInt(factMatch[1] || q.match(/\d+/)[0]);
-            return {
-                message: `${n}! = ${n} × ${n-1} × ... × 1`,
-                result: Calculator.factorial(n).toLocaleString()
-            };
-        }
-
-        // Try direct math evaluation
-        try {
-            const mathQ = q
-                .replace(/plus|add|and/g, '+')
-                .replace(/minus|subtract|less/g, '-')
-                .replace(/times|multiplied\s+by|x/gi, '*')
-                .replace(/divided\s+by|over/g, '/')
-                .replace(/to\s+the\s+power\s+of|\^/g, '**')
-                .replace(/[^\d+\-*/.()%\s]/g, ' ')
-                .replace(/\s+/g, '')
-                .trim();
-
-            if (mathQ && /^[\d+\-*/.()%]+$/.test(mathQ)) {
-                const result = Function('"use strict"; return (' + mathQ + ')')();
-                if (!isNaN(result)) {
-                    return {
-                        message: `Calculating <em>${mathQ}</em>`,
-                        result: result.toLocaleString()
-                    };
-                }
-            }
-        } catch (e) {}
-
         return {
-            message: `I'm not sure how to answer that. Try one of these:<br>
+            message: `I can solve <strong>complex math</strong> and <strong>everyday problems</strong>. Try:<br>
                 <ul>
-                    <li>"what is 15% of 200"</li>
-                    <li>"convert 100 USD to EUR"</li>
-                    <li>"how many km in 10 miles"</li>
-                    <li>"average of 10, 20, 30"</li>
-                    <li>"area of circle radius 5"</li>
-                    <li>"calculate loan repayment for 500000 over 24 months at 18%"</li>
-                    <li>"ovulation if my last period started May 5 and cycle is 28 days"</li>
-                    <li>"estimate annual tax if I earn 800000 monthly in Nigeria"</li>
+                    <li><em>Math:</em> "solve x^2 - 5x + 6 = 0", "sqrt(144) + 2^10", "log(1000)", "7!"</li>
+                    <li><em>Stats:</em> "median of 4, 8, 15, 16, 23", "std dev of 10 12 23 23 16"</li>
+                    <li><em>Numbers:</em> "is 97 prime", "gcd of 48 and 60", "255 to hex", "8 choose 3"</li>
+                    <li><em>Money:</em> "15% of 200", "20% off $80", "split $87.50 among 4 with 18% tip"</li>
+                    <li><em>Everyday:</em> "BMI 70kg 1.75m", "days until Dec 25", "age if born Jan 5 1990"</li>
+                    <li><em>Convert:</em> "100 USD to EUR", "10 miles to km", "100°F to °C"</li>
+                    <li><em>Modules:</em> "loan repayment 500000 over 24 months at 18%", "tax if I earn 800000 monthly in Nigeria"</li>
                 </ul>`,
             result: null
         };
@@ -2000,6 +2140,169 @@ const AI = {
             if (q.includes(key)) return { message: val, result: null };
         }
         return { message: 'I can explain: quadratic formula, Pythagorean theorem, pi, euler, prime numbers, factorial, logarithm, derivative, integral', result: null };
+    },
+
+    // ---- math & everyday helpers ----
+    parseNums(str) { return (String(str).match(/-?\d+(?:\.\d+)?/g) || []).map(Number); },
+
+    fmt(n, d = 4) {
+        if (n === undefined || n === null || (typeof n === 'number' && !isFinite(n))) return String(n);
+        return Number(Number(n).toFixed(d)).toLocaleString(undefined, { maximumFractionDigits: d });
+    },
+    num(n) { return Number.isInteger(n) ? n : Number(n.toFixed(4)); },
+
+    gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; },
+    lcm(a, b) { const g = this.gcd(a, b); return g ? Math.abs(a * b) / g : 0; },
+    isPrime(n) {
+        n = Math.abs(Math.trunc(n));
+        if (n < 2) return false;
+        if (n % 2 === 0) return n === 2;
+        if (n % 3 === 0) return n === 3;
+        for (let i = 5; i * i <= n; i += 6) if (n % i === 0 || n % (i + 2) === 0) return false;
+        return true;
+    },
+    primeFactors(n) {
+        n = Math.abs(Math.trunc(n)); const f = [];
+        for (let d = 2; d * d <= n; d++) { while (n % d === 0) { f.push(d); n /= d; } }
+        if (n > 1) f.push(n);
+        return f.length ? f : [n];
+    },
+    nPr(n, r) { if (r < 0 || r > n) return 0; let res = 1; for (let i = 0; i < r; i++) res *= (n - i); return res; },
+    nCr(n, r) { if (r < 0 || r > n) return 0; r = Math.min(r, n - r); let res = 1; for (let i = 0; i < r; i++) res = res * (n - i) / (i + 1); return Math.round(res); },
+
+    stats(nums) {
+        const n = nums.length, sum = nums.reduce((a, b) => a + b, 0), mean = sum / n;
+        const sorted = [...nums].sort((a, b) => a - b);
+        const median = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+        const freq = {}; nums.forEach(x => { freq[x] = (freq[x] || 0) + 1; });
+        const maxF = Math.max(...Object.values(freq));
+        const modes = maxF > 1 ? Object.keys(freq).filter(k => freq[k] === maxF).map(Number).sort((a, b) => a - b) : [];
+        const ss = nums.reduce((a, b) => a + (b - mean) ** 2, 0);
+        return {
+            n, sum, mean, median, modes,
+            min: sorted[0], max: sorted[n - 1], range: sorted[n - 1] - sorted[0],
+            varPop: ss / n, varSample: n > 1 ? ss / (n - 1) : 0,
+            stdPop: Math.sqrt(ss / n), stdSample: n > 1 ? Math.sqrt(ss / (n - 1)) : 0
+        };
+    },
+
+    safeMath(raw) {
+        let e = ' ' + String(raw).toLowerCase() + ' ';
+        e = e.replace(/\b(what\s+is|whats|what's|calculate|compute|evaluate|the value of|value of|result of|equals?)\b/g, ' ')
+             .replace(/[=?]/g, ' ').replace(/,/g, '')
+             .replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/√\s*/g, 'sqrt')
+             .replace(/\bplus\b/g, '+').replace(/\bminus\b/g, '-')
+             .replace(/\btimes\b|\bmultiplied by\b/g, '*')
+             .replace(/\bdivided by\b|\bover\b/g, '/')
+             .replace(/\bmod(?:ulo|ulus)?\b/g, '%')
+             .replace(/\bsquare\s+of\s+(\d+(?:\.\d+)?)/g, '($1)**2').replace(/\bcube\s+of\s+(\d+(?:\.\d+)?)/g, '($1)**3')
+             .replace(/\bsquared\b/g, '**2').replace(/\bcubed\b/g, '**3')
+             .replace(/\b(?:to the power of|raised to(?: the power of)?)\b|\^/g, '**')
+             .replace(/\bpi\b|π/g, ' PICONST ').replace(/\beuler'?s? number\b/g, ' ECONST ');
+        e = e.replace(/(\d+(?:\.\d+)?)\s*!/g, (_, n) => String(Calculator.factorial(parseFloat(n))));
+        e = e.replace(/\bln\s*\(/g, 'Math.log(').replace(/\blog2\s*\(/g, 'Math.log2(').replace(/\blog10\s*\(/g, 'Math.log10(').replace(/\blog\s*\(/g, 'Math.log10(');
+        ['sqrt', 'cbrt', 'abs', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sin', 'cos', 'tan', 'exp', 'floor', 'ceil', 'round', 'sign'].forEach(f => {
+            e = e.replace(new RegExp('\\b' + f + '\\s*\\(', 'g'), 'Math.' + f + '(');
+        });
+        e = e.replace(/\bPICONST\b/g, 'Math.PI').replace(/\bECONST\b/g, 'Math.E').replace(/\s+/g, '');
+        if (!e || !/[\d)]/.test(e)) return { ok: false };
+        const stripped = e.replace(/Math\.(sqrt|cbrt|abs|asin|acos|atan|sinh|cosh|tanh|sin|cos|tan|log10|log2|log|exp|floor|ceil|round|sign|PI|E)/g, '');
+        if (!/^[\d+\-*/%.()]*$/.test(stripped)) return { ok: false };
+        try {
+            const val = Function('"use strict"; return (' + e + ');')();
+            if (typeof val === 'number' && isFinite(val)) return { ok: true, val };
+        } catch (_) {}
+        return { ok: false };
+    },
+
+    solveEquation(raw) {
+        const clean = String(raw).toLowerCase().replace(/[^0-9x+\-*/^².()=\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!clean.includes('=') || !/x/.test(clean)) return null;
+        const parts = clean.split('=');
+        if (parts.length !== 2) return null;
+        const L = this.parsePoly(parts[0]), R = this.parsePoly(parts[1]);
+        if (!L || !R) return null;
+        const a = L.a - R.a, b = L.b - R.b, c = L.c - R.c;
+        const poly = () => {
+            const bits = [];
+            if (a) bits.push(`${this.num(a)}x²`);
+            if (b) bits.push(`${bits.length ? (b < 0 ? '− ' : '+ ') : (b < 0 ? '−' : '')}${this.num(Math.abs(b))}x`);
+            if (c) bits.push(`${bits.length ? (c < 0 ? '− ' : '+ ') : (c < 0 ? '−' : '')}${this.num(Math.abs(c))}`);
+            return (bits.join(' ') || '0') + ' = 0';
+        };
+        if (Math.abs(a) > 1e-12) {
+            const disc = b * b - 4 * a * c;
+            if (disc >= -1e-9) {
+                const d = Math.sqrt(Math.max(0, disc)), x1 = (-b + d) / (2 * a), x2 = (-b - d) / (2 * a);
+                return { message: `Solving <em>${poly()}</em> — quadratic formula:`, result: Math.abs(x1 - x2) < 1e-9 ? `x = ${this.fmt(x1, 6)} (double root)` : `x = ${this.fmt(x1, 6)}  or  x = ${this.fmt(x2, 6)}` };
+            }
+            const re = -b / (2 * a), im = Math.sqrt(-disc) / (2 * a);
+            return { message: `Solving <em>${poly()}</em> — complex roots:`, result: `x = ${this.fmt(re, 4)} ± ${this.fmt(im, 4)}i` };
+        }
+        if (Math.abs(b) > 1e-12) return { message: `Solving <em>${poly()}</em> — linear:`, result: `x = ${this.fmt(-c / b, 6)}` };
+        return null;
+    },
+    parsePoly(side) {
+        let s = (side || '').replace(/\s+/g, '').replace(/×/g, '*');
+        if (!s) return { a: 0, b: 0, c: 0 };
+        s = s.replace(/x\^2|x\*\*2|x²|x\*x/g, '#Q#');
+        s = s.replace(/(\d)\*x/g, '$1x').replace(/x/g, '#L#');
+        s = s.replace(/([+\-])/g, ' $1');
+        let a = 0, b = 0, c = 0;
+        for (const t of s.split(/\s+/).filter(Boolean)) {
+            if (t.includes('#Q#')) a += this.coef(t.replace('#Q#', ''));
+            else if (t.includes('#L#')) b += this.coef(t.replace('#L#', ''));
+            else { const v = parseFloat(t); if (isNaN(v)) return null; c += v; }
+        }
+        return { a, b, c };
+    },
+    coef(str) { if (str === '' || str === '+') return 1; if (str === '-') return -1; const v = parseFloat(str); return isNaN(v) ? 0 : v; },
+
+    handleDates(q) {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const DAY = 86400000;
+        const fmtFull = d => d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const untilM = q.match(/days?\s+(?:until|till|to|before)\s+(.+)/i);
+        if (untilM) {
+            const t = this.parseAnyDate(untilM[1], true);
+            if (t) { const diff = Math.round((t - today) / DAY); return { message: `From today (${today.toLocaleDateString()}):`, result: diff >= 0 ? `${diff} day${diff === 1 ? '' : 's'} until ${t.toLocaleDateString()}` : `that was ${-diff} day${-diff === 1 ? '' : 's'} ago` }; }
+        }
+        const betweenM = q.match(/days?\s+between\s+(.+?)\s+and\s+(.+)/i);
+        if (betweenM) {
+            const a = this.parseAnyDate(betweenM[1]), b = this.parseAnyDate(betweenM[2]);
+            if (a && b) { const diff = Math.abs(Math.round((b - a) / DAY)); return { message: `Between ${a.toLocaleDateString()} and ${b.toLocaleDateString()}:`, result: `${diff} day${diff === 1 ? '' : 's'} (${this.fmt(diff / 7, 1)} weeks)` }; }
+        }
+        const addM = q.match(/(\d+)\s+days?\s+(from\s+(?:now|today)|after\s+today|ago|before\s+today)/i);
+        if (addM) { const n = +addM[1], dir = /ago|before/i.test(addM[2]) ? -1 : 1; const d = new Date(today); d.setDate(d.getDate() + dir * n); return { message: `${n} days ${dir > 0 ? 'from' : 'before'} today:`, result: fmtFull(d) }; }
+        const dowM = q.match(/what\s+day(?:\s+of\s+the\s+week)?\s+(?:is|was|will\s+be)\s+(.+)/i);
+        if (dowM) { const d = this.parseAnyDate(dowM[1], true); if (d) return { message: `${d.toLocaleDateString()} falls on:`, result: d.toLocaleDateString(undefined, { weekday: 'long' }) }; }
+        const ageM = q.match(/(?:age|how\s+old).*?(?:born\s+(?:on\s+)?|birth(?:day|date)?\s+(?:is\s+)?)(.+)/i);
+        if (ageM) {
+            const bd = this.parseAnyDate(ageM[1]);
+            if (bd) {
+                let years = today.getFullYear() - bd.getFullYear();
+                if (today.getMonth() < bd.getMonth() || (today.getMonth() === bd.getMonth() && today.getDate() < bd.getDate())) years--;
+                return { message: `Born ${bd.toLocaleDateString()}:`, result: `${years} years old (${Math.round((today - bd) / DAY).toLocaleString()} days)` };
+            }
+        }
+        return null;
+    },
+    parseAnyDate(str, futureBias) {
+        str = String(str).trim().toLowerCase().replace(/[?.!,]+$/, '');
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const holidays = { "new year": [0, 1], "valentine": [1, 14], "halloween": [9, 31], "christmas": [11, 25], "xmas": [11, 25], "independence day": [6, 4], "boxing day": [11, 26] };
+        for (const k in holidays) { if (str.includes(k)) { const [mo, da] = holidays[k]; let d = new Date(today.getFullYear(), mo, da); if (futureBias && d < today) d.setFullYear(d.getFullYear() + 1); return d; } }
+        if (str.includes('today')) return today;
+        if (str.includes('tomorrow')) { const d = new Date(today); d.setDate(d.getDate() + 1); return d; }
+        if (str.includes('yesterday')) { const d = new Date(today); d.setDate(d.getDate() - 1); return d; }
+        let m = str.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+        m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+        if (m) { let y = +m[3]; if (y < 100) y += 2000; return new Date(y, +m[1] - 1, +m[2]); }
+        const fd = this.parseFlexibleDate(str);
+        if (fd) { if (futureBias && fd < today) fd.setFullYear(fd.getFullYear() + 1); return fd; }
+        const t = Date.parse(str);
+        return isNaN(t) ? null : new Date(t);
     }
 };
 
