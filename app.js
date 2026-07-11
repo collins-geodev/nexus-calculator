@@ -1930,6 +1930,10 @@ const AI = {
             };
         }
 
+        // Currency conversion (symbols/codes/names in any position, e.g. "convert $100 to NGN")
+        const conv = this.tryCurrencyConvert(q);
+        if (conv) return conv;
+
         // Currency conversion
         const curMatch = q.match(/convert\s+(\d+\.?\d*)\s+(\w+)\s+(?:to|in|into)\s+(\w+)/i);
         if (curMatch) {
@@ -1944,6 +1948,13 @@ const AI = {
                     result: `${CURRENCIES[from].symbol}${amount.toLocaleString()} = ${CURRENCIES[to].symbol}${result.toLocaleString(undefined, {maximumFractionDigits: 4})}`
                 };
             }
+        }
+
+        // Reverse unit phrasing: "how many meters in 5 feet"
+        const revUnit = q.match(/how\s+many\s+(\w+(?:\s?\w+)?)\s+(?:are\s+)?in\s+([\d,]+\.?\d*)\s+(\w+(?:\s?\w+)?)/i);
+        if (revUnit) {
+            const conv = this.tryUnitConversion(parseFloat(revUnit[2].replace(/,/g, '')), revUnit[3].trim(), revUnit[1].trim());
+            if (conv) return conv;
         }
 
         // Unit conversion
@@ -2089,6 +2100,29 @@ const AI = {
     curSym(q, def = 'USD') {
         const c = this.detectCurrencyInQuery(q) || def;
         return CURRENCIES[c] ? CURRENCIES[c].symbol : '';
+    },
+
+    // Robust currency conversion: amount may carry a symbol ($100), and the
+    // from/to currencies may be symbols, ISO codes, or names, in any position.
+    tryCurrencyConvert(q) {
+        const m = q.match(/^(.*?)\b(?:to|into|in)\b\s+(.+)$/i);
+        if (!m) return null;
+        const lhs = m[1], rhs = m[2];
+        const amtM = lhs.match(/([\d,]+(?:\.\d+)?)/);
+        if (!amtM) return null;
+        const amount = parseFloat(amtM[1].replace(/,/g, ''));
+        if (!isFinite(amount)) return null;
+        const from = this.detectCurrencyInQuery(lhs);
+        const to = this.detectCurrencyInQuery(rhs);
+        if (!from || !to || from === to) return null;
+        const rates = (typeof state !== 'undefined' && state.currency && state.currency.rates) || CURRENCIES;
+        const fromRate = (rates[from] && rates[from].rate) || CURRENCIES[from].rate;
+        const toRate = (rates[to] && rates[to].rate) || CURRENCIES[to].rate;
+        const result = (amount / fromRate) * toRate;
+        return {
+            message: `Converting ${amount.toLocaleString()} ${CURRENCIES[from].name} to ${CURRENCIES[to].name}`,
+            result: `${CURRENCIES[from].symbol}${amount.toLocaleString()} = ${CURRENCIES[to].symbol}${result.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        };
     },
 
     // Translate common math phrasing from a few major languages into the

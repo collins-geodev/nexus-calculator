@@ -3775,14 +3775,15 @@ select.form-input {
 .display-readout { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .glass-display .display-expression { font-family: var(--font-mono); font-size: 15px; color: var(--text-tertiary);
     min-height: 20px; text-align: right; word-break: break-all; opacity: 0.92; }
-.glass-display .display-result { font-family: var(--font-mono); font-size: 48px; font-weight: 600; line-height: 1.05;
+.glass-display .display-result { font-family: var(--font-mono); font-size: 48px; font-weight: 700; line-height: 1.05;
     text-align: right; word-break: break-all; letter-spacing: -1px;
-    background: linear-gradient(180deg, #ffffff 0%, #ccd2ff 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    filter: drop-shadow(0 2px 20px rgba(99, 102, 241, 0.38));
-    transition: filter var(--transition-fast); }
+    color: #ffffff; -webkit-text-fill-color: #ffffff; background: none;
+    text-shadow: 0 2px 22px rgba(99, 102, 241, 0.55), 0 0 1px rgba(255, 255, 255, 0.5);
+    transform-origin: right center;
+    animation: displayZoom 2.6s ease-in-out infinite; }
+@keyframes displayZoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
 .glass-display .display-result.error { background: none; -webkit-text-fill-color: var(--accent-danger);
-    color: var(--accent-danger); filter: none; font-size: 26px; }
+    color: var(--accent-danger); filter: none; font-size: 26px; animation: none; }
 
 @media (prefers-reduced-motion: reduce) {
     .orb, .glass-shine, .bm-ring, .bm-orbit, .bm-sigma, .live-dot { animation: none; }
@@ -3939,7 +3940,8 @@ select.form-input {
 .app-version strong { color: var(--text-secondary); font-weight: 700; }
 
 @media (prefers-reduced-motion: reduce) {
-    .dev-profile-glow, .dev-avatar-ring, .dev-status, .dev-avatar-bg { animation: none; }
+    .dev-profile-glow, .dev-avatar-bg { animation: none; }
+    /* ring, status & photo keep animating so they stay visible in the mobile (TWA) app */
 }
 
 /* Developer photo avatar (overlays the CA fallback; ring stays around it) */
@@ -3960,10 +3962,10 @@ select.form-input {
 }
 
 /* Animated developer avatar: gently zooming photo (the dotted ring already rotates) */
-.dev-avatar-photo { animation: devPhotoZoom 4.5s ease-in-out infinite; }
+.dev-avatar-photo { animation: devPhotoZoom 3.4s ease-in-out infinite; }
 @keyframes devPhotoZoom {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50%      { transform: translate(-50%, -50%) scale(1.09); }
+    0%, 100% { transform: translate(-50%, -50%) scale(0.9); }
+    50%      { transform: translate(-50%, -50%) scale(1.08); }
 }
 
 /* Edit button on user chat messages — click to reload the question into the input */
@@ -3980,7 +3982,7 @@ select.form-input {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0;
+    opacity: 0.75;
     transition: all var(--transition-fast);
 }
 .ai-message.ai-user:hover .ai-edit-btn { opacity: 1; }
@@ -3992,8 +3994,6 @@ select.form-input {
 }
 .ai-edit-btn:active { transform: scale(0.94); }
 /* Touch devices have no hover — keep the edit affordance visible */
-@media (hover: none) { .ai-edit-btn { opacity: 0.55; } }
+@media (hover: none) { .ai-edit-btn { opacity: 0.9; } }
 
-@media (prefers-reduced-motion: reduce) {
-    .dev-avatar-photo { animation: none; }
-}
+/* .dev-avatar-photo intentionally keeps its zoom under reduced-motion (user request) */
