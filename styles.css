@@ -3292,6 +3292,20 @@ select.form-input {
     margin-top: 8px;
 }
 
+/* Chart SVG typography + richer chart details */
+.donut-chart svg text,
+.line-chart svg text { font-family: var(--font-sans); }
+
+.donut-center-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.line-chart svg { max-height: 240px; }
+
+.bar-fill { min-width: 3px; }
+
 /* Bar chart */
 .bar-chart-inner {
     width: 100%;

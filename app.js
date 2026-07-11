@@ -638,6 +638,18 @@ function hapticPulse(duration = 10) {
     if (navigator.vibrate) navigator.vibrate(duration);
 }
 
+// Compact money/number for chart axes & centers (e.g. ₦1.2M, $850k)
+function fmtCompact(v, sym = '') {
+    const n = Number(v) || 0;
+    const a = Math.abs(n);
+    let s, suffix;
+    if (a >= 1e9) { s = (n / 1e9).toFixed(a >= 1e10 ? 0 : 1); suffix = 'B'; }
+    else if (a >= 1e6) { s = (n / 1e6).toFixed(a >= 1e7 ? 0 : 1); suffix = 'M'; }
+    else if (a >= 1e3) { s = (n / 1e3).toFixed(a >= 1e4 ? 0 : 1); suffix = 'k'; }
+    else return sym + Math.round(n).toString();
+    return sym + s.replace(/\.0$/, '') + suffix;
+}
+
 // ===== CALCULATOR ENGINE =====
 const Calculator = {
     formatNumber(num) {
@@ -2545,16 +2557,30 @@ const Loan = {
 
     renderDonut(r) {
         const total = r.principal + r.totalInterest;
-        const pPct = (r.principal / total) * 100;
+        const pPct = total > 0 ? (r.principal / total) * 100 : 0;
         const iPct = 100 - pPct;
+        const sym = CURRENCIES[r.currency]?.symbol || '';
+        const C = 502.65;
         const wrap = document.getElementById('loanDonut');
         wrap.innerHTML = `
-            <svg viewBox="0 0 200 200" width="100%" height="200">
-                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-primary)" stroke-width="35"
-                    stroke-dasharray="${pPct * 5.026} 502.6" transform="rotate(-90 100 100)"/>
-                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-secondary)" stroke-width="35"
-                    stroke-dasharray="${iPct * 5.026} 502.6" stroke-dashoffset="${-pPct * 5.026}" transform="rotate(-90 100 100)"/>
-                <text x="100" y="100" text-anchor="middle" dy=".3em" fill="var(--text-primary)" font-size="14" font-weight="600">Total Cost</text>
+            <svg viewBox="0 0 200 200" width="100%" height="200" role="img" aria-label="Principal versus interest">
+                <defs>
+                    <linearGradient id="loanDonutP" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="var(--accent-primary)"/>
+                        <stop offset="100%" stop-color="var(--accent-tertiary)"/>
+                    </linearGradient>
+                    <linearGradient id="loanDonutI" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="var(--accent-secondary)"/>
+                        <stop offset="100%" stop-color="#f9a8d4"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--bg-tertiary)" stroke-width="34"/>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="url(#loanDonutP)" stroke-width="34"
+                    stroke-dasharray="${(pPct / 100 * C).toFixed(2)} ${C}" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="url(#loanDonutI)" stroke-width="34"
+                    stroke-dasharray="${(iPct / 100 * C).toFixed(2)} ${C}" stroke-dashoffset="${(-pPct / 100 * C).toFixed(2)}" transform="rotate(-90 100 100)"/>
+                <text class="donut-center-value" x="100" y="97" text-anchor="middle" fill="var(--text-primary)" font-size="21">${fmtCompact(total, sym)}</text>
+                <text x="100" y="116" text-anchor="middle" fill="var(--text-tertiary)" font-size="10" letter-spacing="1">TOTAL COST</text>
             </svg>
             <div class="chart-legend">
                 <span class="legend-item"><span class="legend-dot" style="background:var(--accent-primary)"></span>Principal ${pPct.toFixed(1)}%</span>
@@ -2565,28 +2591,39 @@ const Loan = {
 
     renderLineChart(r) {
         const wrap = document.getElementById('loanLineChart');
-        const balances = r.schedule.map(s => s.closing);
-        if (!balances.length) { wrap.innerHTML = ''; return; }
-        const max = r.principal;
-        const w = 320, h = 160, pad = 20;
-        const points = balances.map((b, idx) => {
-            const x = pad + ((idx / Math.max(1, balances.length - 1)) * (w - 2 * pad));
-            const y = pad + ((1 - b / max) * (h - 2 * pad));
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
-        }).join(' ');
+        if (!r.schedule.length) { wrap.innerHTML = ''; return; }
+        const sym = CURRENCIES[r.currency]?.symbol || '';
+        const balances = [r.principal, ...r.schedule.map(s => Math.max(0, s.closing))];
+        const max = Math.max(r.principal, ...balances) || 1;
+        const n = balances.length;
+        const w = 340, h = 210, padL = 48, padR = 12, padT = 12, padB = 26;
+        const plotW = w - padL - padR, plotH = h - padT - padB;
+        const X = i => padL + (i / Math.max(1, n - 1)) * plotW;
+        const Y = v => padT + (1 - v / max) * plotH;
+        const pts = balances.map((b, i) => `${X(i).toFixed(1)},${Y(b).toFixed(1)}`).join(' ');
+        const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f => {
+            const y = Y(max * f);
+            return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" stroke="var(--border-color)" stroke-width="1"/>`
+                + `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" fill="var(--text-muted)" font-size="9">${fmtCompact(max * f, sym)}</text>`;
+        }).join('');
+        const baseY = Y(0).toFixed(1);
         wrap.innerHTML = `
-            <svg viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="none" style="max-height:200px;">
-                <polyline fill="none" stroke="var(--accent-primary)" stroke-width="2" points="${points}"/>
-                <polyline fill="url(#loanFill)" stroke="none"
-                    points="${pad},${h - pad} ${points} ${w - pad},${h - pad}" opacity="0.25"/>
+            <svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Outstanding balance over time">
                 <defs>
                     <linearGradient id="loanFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.6"/>
+                        <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.35"/>
                         <stop offset="100%" stop-color="var(--accent-primary)" stop-opacity="0"/>
                     </linearGradient>
                 </defs>
+                ${gridLines}
+                <polygon fill="url(#loanFill)" stroke="none" points="${X(0).toFixed(1)},${baseY} ${pts} ${X(n - 1).toFixed(1)},${baseY}"/>
+                <polyline fill="none" stroke="var(--accent-primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/>
+                <circle cx="${X(0).toFixed(1)}" cy="${Y(balances[0]).toFixed(1)}" r="3.5" fill="var(--accent-primary)" stroke="var(--bg-secondary)" stroke-width="1.5"/>
+                <circle cx="${X(n - 1).toFixed(1)}" cy="${Y(balances[n - 1]).toFixed(1)}" r="3.5" fill="var(--accent-secondary)" stroke="var(--bg-secondary)" stroke-width="1.5"/>
+                <text x="${padL}" y="${h - 8}" text-anchor="start" fill="var(--text-muted)" font-size="9">Pmt 1</text>
+                <text x="${w - padR}" y="${h - 8}" text-anchor="end" fill="var(--text-muted)" font-size="9">Pmt ${r.numPayments}</text>
             </svg>
-            <div class="chart-meta">Balance reduces over ${balances.length} payments</div>
+            <div class="chart-meta">Outstanding balance over ${r.numPayments} payments</div>
         `;
     },
 
@@ -2988,16 +3025,29 @@ const Tax = {
 
     renderDonut(r) {
         const total = r.yearlyGross || 1;
-        const tPct = (r.taxAfterCredits / total) * 100;
+        const tPct = Math.min(100, Math.max(0, (r.taxAfterCredits / total) * 100));
         const nPct = 100 - tPct;
+        const C = 502.65;
         const wrap = document.getElementById('taxDonut');
         wrap.innerHTML = `
-            <svg viewBox="0 0 200 200" width="100%" height="200">
-                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-success)" stroke-width="35"
-                    stroke-dasharray="${nPct * 5.026} 502.6" transform="rotate(-90 100 100)"/>
-                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-danger)" stroke-width="35"
-                    stroke-dasharray="${tPct * 5.026} 502.6" stroke-dashoffset="${-nPct * 5.026}" transform="rotate(-90 100 100)"/>
-                <text x="100" y="100" text-anchor="middle" dy=".3em" fill="var(--text-primary)" font-size="14" font-weight="600">Income</text>
+            <svg viewBox="0 0 200 200" width="100%" height="200" role="img" aria-label="Net income versus tax">
+                <defs>
+                    <linearGradient id="taxDonutN" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="var(--accent-success)"/>
+                        <stop offset="100%" stop-color="#34d399"/>
+                    </linearGradient>
+                    <linearGradient id="taxDonutT" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="var(--accent-danger)"/>
+                        <stop offset="100%" stop-color="#fb7185"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--bg-tertiary)" stroke-width="34"/>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="url(#taxDonutN)" stroke-width="34"
+                    stroke-dasharray="${(nPct / 100 * C).toFixed(2)} ${C}" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="url(#taxDonutT)" stroke-width="34"
+                    stroke-dasharray="${(tPct / 100 * C).toFixed(2)} ${C}" stroke-dashoffset="${(-nPct / 100 * C).toFixed(2)}" transform="rotate(-90 100 100)"/>
+                <text class="donut-center-value" x="100" y="97" text-anchor="middle" fill="var(--text-primary)" font-size="22">${r.effectiveRate.toFixed(1)}%</text>
+                <text x="100" y="116" text-anchor="middle" fill="var(--text-tertiary)" font-size="10" letter-spacing="1">EFF. RATE</text>
             </svg>
             <div class="chart-legend">
                 <span class="legend-item"><span class="legend-dot" style="background:var(--accent-success)"></span>Net ${nPct.toFixed(1)}%</span>
