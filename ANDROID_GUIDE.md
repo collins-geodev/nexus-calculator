@@ -434,7 +434,7 @@ All stored in your device's local storage and never sent anywhere.
 Email: polosoft.collins@gmail.com
 ```
 
-Host this at: https://github.com/Collins76/nexus-calculator/blob/main/PRIVACY.md (GitHub URL works as privacy policy link).
+Host this at: https://github.com/collins-geodev/nexus-calculator/blob/main/PRIVACY.md (GitHub URL works as privacy policy link).
 
 ### Content Rating
 

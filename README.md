@@ -87,7 +87,7 @@ No build tools required — it's pure HTML/CSS/JS.
 
 ```bash
 # Clone the repository
-git clone https://github.com/Collins76/nexus-calculator.git
+git clone https://github.com/collins-geodev/nexus-calculator.git
 cd nexus-calculator
 
 # Open directly in your browser
