@@ -1083,7 +1083,7 @@ const Currency = {
     },
 
     convert() {
-        const amount = parseFloat(document.getElementById('currencyFromAmount').value) || 0;
+        const amount = MoneyFmt.parse(document.getElementById('currencyFromAmount').value);
         const from = document.getElementById('currencyFrom').value;
         const to = document.getElementById('currencyTo').value;
 
@@ -1094,7 +1094,7 @@ const Currency = {
         const usdAmount = amount / fromRate;
         const result = usdAmount * toRate;
 
-        document.getElementById('currencyToAmount').value = result.toFixed(state.settings.decimalPlaces);
+        MoneyFmt.set(document.getElementById('currencyToAmount'), result, state.settings.decimalPlaces);
 
         const rateDisplay = document.getElementById('exchangeRate');
         const singleRate = (1 / fromRate) * toRate;
@@ -1112,7 +1112,7 @@ const Currency = {
     },
 
     convertReverse() {
-        const amount = parseFloat(document.getElementById('currencyToAmount').value) || 0;
+        const amount = MoneyFmt.parse(document.getElementById('currencyToAmount').value);
         const from = document.getElementById('currencyFrom').value;
         const to = document.getElementById('currencyTo').value;
 
@@ -1123,7 +1123,7 @@ const Currency = {
         const usdAmount = amount / toRate;
         const result = usdAmount * fromRate;
 
-        document.getElementById('currencyFromAmount').value = result.toFixed(state.settings.decimalPlaces);
+        MoneyFmt.set(document.getElementById('currencyFromAmount'), result, state.settings.decimalPlaces);
         this.convert();
     },
 
@@ -1197,7 +1197,7 @@ const Currency = {
                 if (preset) {
                     document.getElementById('currencyFrom').value = preset.from;
                     document.getElementById('currencyTo').value = preset.to;
-                    document.getElementById('currencyFromAmount').value = preset.amount;
+                    MoneyFmt.set(document.getElementById('currencyFromAmount'), preset.amount);
                     this.convert();
                 }
             });
@@ -1252,7 +1252,7 @@ const Currency = {
 
         document.querySelectorAll('#currency-mode .quick-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.getElementById('currencyFromAmount').value = btn.dataset.amount;
+                MoneyFmt.set(document.getElementById('currencyFromAmount'), btn.dataset.amount);
                 this.convert();
             });
         });
@@ -2674,7 +2674,7 @@ const Loan = {
     loadFromState() {
         const s = state.loan;
         const today = new Date().toISOString().slice(0, 10);
-        document.getElementById('loanAmount').value = s.amount;
+        MoneyFmt.set(document.getElementById('loanAmount'), s.amount);
         document.getElementById('loanCurrency').value = s.currency;
         document.getElementById('loanRate').value = s.rate;
         document.getElementById('loanRateType').value = s.rateType;
@@ -2684,11 +2684,11 @@ const Loan = {
         document.getElementById('loanFreq').value = s.frequency;
         document.getElementById('loanStartDate').value = s.startDate || today;
         document.getElementById('loanFirstPayment').value = s.firstPayment || this.addMonths(today, 1);
-        document.getElementById('loanDown').value = s.downPayment;
-        document.getElementById('loanProcFee').value = s.processingFee;
-        document.getElementById('loanInsurance').value = s.insurance;
-        document.getElementById('loanExtra').value = s.extraPayment;
-        document.getElementById('loanBalloon').value = s.balloon;
+        MoneyFmt.set(document.getElementById('loanDown'), s.downPayment);
+        MoneyFmt.set(document.getElementById('loanProcFee'), s.processingFee);
+        MoneyFmt.set(document.getElementById('loanInsurance'), s.insurance);
+        MoneyFmt.set(document.getElementById('loanExtra'), s.extraPayment);
+        MoneyFmt.set(document.getElementById('loanBalloon'), s.balloon);
         document.getElementById('loanGrace').value = s.grace;
         document.getElementById('loanCompound').value = s.compounding;
     },
@@ -2713,7 +2713,7 @@ const Loan = {
 
     readInputs() {
         return {
-            amount: parseFloat(document.getElementById('loanAmount').value) || 0,
+            amount: MoneyFmt.parse(document.getElementById('loanAmount').value),
             currency: document.getElementById('loanCurrency').value,
             rate: parseFloat(document.getElementById('loanRate').value) || 0,
             rateType: document.getElementById('loanRateType').value,
@@ -2723,11 +2723,11 @@ const Loan = {
             frequency: document.getElementById('loanFreq').value,
             startDate: document.getElementById('loanStartDate').value,
             firstPayment: document.getElementById('loanFirstPayment').value,
-            downPayment: parseFloat(document.getElementById('loanDown').value) || 0,
-            processingFee: parseFloat(document.getElementById('loanProcFee').value) || 0,
-            insurance: parseFloat(document.getElementById('loanInsurance').value) || 0,
-            extraPayment: parseFloat(document.getElementById('loanExtra').value) || 0,
-            balloon: parseFloat(document.getElementById('loanBalloon').value) || 0,
+            downPayment: MoneyFmt.parse(document.getElementById('loanDown').value),
+            processingFee: MoneyFmt.parse(document.getElementById('loanProcFee').value),
+            insurance: MoneyFmt.parse(document.getElementById('loanInsurance').value),
+            extraPayment: MoneyFmt.parse(document.getElementById('loanExtra').value),
+            balloon: MoneyFmt.parse(document.getElementById('loanBalloon').value),
             grace: parseInt(document.getElementById('loanGrace').value) || 0,
             compounding: document.getElementById('loanCompound').value
         };
@@ -3102,12 +3102,12 @@ const Loan = {
     reset() {
         state.loan.result = null;
         document.getElementById('loanResults').style.display = 'none';
-        document.getElementById('loanAmount').value = 500000;
+        MoneyFmt.set(document.getElementById('loanAmount'), 500000);
         document.getElementById('loanRate').value = 15;
         document.getElementById('loanTerm').value = 24;
-        document.getElementById('loanDown').value = 0;
-        document.getElementById('loanExtra').value = 0;
-        document.getElementById('loanBalloon').value = 0;
+        MoneyFmt.set(document.getElementById('loanDown'), 0);
+        MoneyFmt.set(document.getElementById('loanExtra'), 0);
+        MoneyFmt.set(document.getElementById('loanBalloon'), 0);
         showToast('Loan calculator reset', 'info', 1500);
     },
 
@@ -3211,7 +3211,7 @@ const Tax = {
         document.getElementById('taxYear').value = s.year;
         document.getElementById('taxCurrency').value = s.currency;
         document.getElementById('taxIncomeType').value = s.incomeType;
-        document.getElementById('taxIncome').value = s.income;
+        MoneyFmt.set(document.getElementById('taxIncome'), s.income);
         document.getElementById('taxPeriod').value = s.period;
         document.getElementById('taxStatus').value = s.status;
         document.getElementById('taxStartMonth').value = s.startMonth;
@@ -3292,7 +3292,7 @@ const Tax = {
             year: parseInt(document.getElementById('taxYear').value) || 2026,
             currency: document.getElementById('taxCurrency').value,
             incomeType: document.getElementById('taxIncomeType').value,
-            income: parseFloat(document.getElementById('taxIncome').value) || 0,
+            income: MoneyFmt.parse(document.getElementById('taxIncome').value),
             period: document.getElementById('taxPeriod').value,
             status: document.getElementById('taxStatus').value,
             startMonth: parseInt(document.getElementById('taxStartMonth').value) || 1,
@@ -3822,6 +3822,52 @@ function animateButton(selector) {
 // ===== INITIALIZATION =====
 const SETTINGS_VERSION = 2;
 
+// ===== MONEY INPUT FORMATTING (live thousands commas + 2 decimals on blur) =====
+const MoneyFmt = {
+    // Group the integer part with commas; keep the decimal part as typed.
+    live(raw) {
+        let s = String(raw).replace(/[^\d.]/g, '');
+        const i = s.indexOf('.');
+        if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, ''); // only one dot
+        const parts = s.split('.');
+        let int = (parts[0] || '').replace(/^0+(?=\d)/, '');
+        const dec = parts[1];
+        const intFmt = int ? Number(int).toLocaleString('en-US') : (dec !== undefined ? '0' : '');
+        return dec !== undefined ? intFmt + '.' + dec : intFmt;
+    },
+    parse(v) { const n = parseFloat(String(v).replace(/,/g, '')); return isNaN(n) ? 0 : n; },
+    fixed(v, dp) {
+        dp = (dp == null) ? 2 : dp;
+        return this.parse(v).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+    },
+    attach(input, dp) {
+        if (!input || input.dataset.moneyFmt) return;
+        input.dataset.moneyFmt = '1';
+        input.setAttribute('type', 'text');
+        input.setAttribute('inputmode', 'decimal');
+        const getDp = typeof dp === 'function' ? dp : () => (dp == null ? 2 : dp);
+        input.addEventListener('input', () => {
+            const caret = input.selectionStart || 0;
+            const digitsLeft = input.value.slice(0, caret).replace(/[^\d]/g, '').length;
+            input.value = this.live(input.value);
+            let pos = 0, seen = 0;
+            while (pos < input.value.length && seen < digitsLeft) { if (/\d/.test(input.value[pos])) seen++; pos++; }
+            try { input.setSelectionRange(pos, pos); } catch (e) {}
+        });
+        input.addEventListener('blur', () => { if (input.value.trim() !== '') input.value = this.fixed(input.value, getDp()); });
+        if (input.value.trim() !== '') input.value = this.fixed(input.value, getDp());
+    },
+    // Programmatic write (keeps the field formatted).
+    set(input, num, dp) { if (input) input.value = this.fixed(num, dp); }
+};
+
+function initMoneyInputs() {
+    const curDp = () => state.settings.decimalPlaces || 2;
+    ['currencyFromAmount', 'currencyToAmount'].forEach(id => MoneyFmt.attach(document.getElementById(id), curDp));
+    ['loanAmount', 'loanDown', 'loanProcFee', 'loanInsurance', 'loanExtra', 'loanBalloon', 'taxIncome']
+        .forEach(id => MoneyFmt.attach(document.getElementById(id), 2));
+}
+
 function init() {
     // Load saved state
     state.calculator.history = Storage.load('history', []);
@@ -3868,6 +3914,7 @@ function init() {
     Loan.init();
     Tax.init();
     Voice.init();
+    initMoneyInputs();
     Calculator.renderHistory();
     Calculator.updateDisplay();
     initKeyboard();
