@@ -3941,3 +3941,20 @@ select.form-input {
 @media (prefers-reduced-motion: reduce) {
     .dev-profile-glow, .dev-avatar-ring, .dev-status, .dev-avatar-bg { animation: none; }
 }
+
+/* Developer photo avatar (overlays the CA fallback; ring stays around it) */
+.dev-avatar-photo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 28%;
+    z-index: 1;
+    display: block;
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
