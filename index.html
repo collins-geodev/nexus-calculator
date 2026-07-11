@@ -145,10 +145,38 @@
         <!-- Calculator Mode -->
         <section class="mode-content active" id="calculator-mode">
             <div class="calculator-wrapper">
-                <div class="display-container">
-                    <div class="display-expression" id="expression"></div>
-                    <div class="display-result" id="display">0</div>
-                    <div class="display-memory" id="memoryIndicator"></div>
+                <div class="display-container glass-display">
+                    <div class="glass-aurora" aria-hidden="true">
+                        <span class="orb orb-a"></span>
+                        <span class="orb orb-b"></span>
+                        <span class="orb orb-c"></span>
+                    </div>
+                    <div class="glass-frost" aria-hidden="true"></div>
+                    <div class="glass-shine" aria-hidden="true"></div>
+                    <div class="display-chrome">
+                        <div class="chrome-brand">
+                            <svg class="brand-mark" viewBox="0 0 40 40" width="26" height="26" fill="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="bmGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="var(--accent-primary)"/>
+                                        <stop offset="100%" stop-color="var(--accent-secondary)"/>
+                                    </linearGradient>
+                                </defs>
+                                <circle class="bm-ring" cx="20" cy="20" r="16" stroke="url(#bmGrad)" stroke-width="2.2" stroke-dasharray="5 7" stroke-linecap="round"/>
+                                <circle class="bm-orbit" cx="20" cy="4" r="2.6" fill="var(--accent-secondary)"/>
+                                <path class="bm-sigma" d="M26 12H14l7 8-7 8h12" stroke="url(#bmGrad)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="chrome-title">NEXUS</span>
+                        </div>
+                        <div class="chrome-status">
+                            <span class="mem-pill" id="memoryIndicator"></span>
+                            <span class="live-pill"><i class="live-dot"></i>ACTIVE</span>
+                        </div>
+                    </div>
+                    <div class="display-readout">
+                        <div class="display-expression" id="expression"></div>
+                        <div class="display-result" id="display">0</div>
+                    </div>
                 </div>
 
                 <div class="calc-mode-toggle">
