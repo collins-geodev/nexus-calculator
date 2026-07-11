@@ -3958,3 +3958,42 @@ select.form-input {
     border: 2px solid rgba(255, 255, 255, 0.14);
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
 }
+
+/* Animated developer avatar: gently zooming photo (the dotted ring already rotates) */
+.dev-avatar-photo { animation: devPhotoZoom 4.5s ease-in-out infinite; }
+@keyframes devPhotoZoom {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50%      { transform: translate(-50%, -50%) scale(1.09); }
+}
+
+/* Edit button on user chat messages — click to reload the question into the input */
+.ai-message.ai-user { align-items: center; }
+.ai-edit-btn {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-tertiary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--transition-fast);
+}
+.ai-message.ai-user:hover .ai-edit-btn { opacity: 1; }
+.ai-edit-btn:hover {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    color: #fff;
+    border-color: transparent;
+    transform: scale(1.08);
+}
+.ai-edit-btn:active { transform: scale(0.94); }
+/* Touch devices have no hover — keep the edit affordance visible */
+@media (hover: none) { .ai-edit-btn { opacity: 0.55; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .dev-avatar-photo { animation: none; }
+}

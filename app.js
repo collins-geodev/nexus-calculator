@@ -1576,7 +1576,24 @@ const AI = {
         if (result !== null) bubble += `<div class="ai-result">${result}</div>`;
         bubble += '</div>';
 
+        if (role === 'user') {
+            bubble += `<button class="ai-edit-btn" type="button" title="Edit & ask again" aria-label="Edit this question">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </button>`;
+        }
+
         msg.innerHTML = bubble;
+
+        if (role === 'user') {
+            const editBtn = msg.querySelector('.ai-edit-btn');
+            editBtn.addEventListener('click', () => {
+                const input = document.getElementById('aiInput');
+                input.value = content;
+                input.focus();
+                try { input.setSelectionRange(content.length, content.length); } catch (e) {}
+            });
+        }
+
         chat.appendChild(msg);
         chat.scrollTop = chat.scrollHeight;
     },
@@ -1610,6 +1627,7 @@ const AI = {
     },
 
     analyze(query) {
+        query = this.normalizeLanguage(query);
         const q = query.toLowerCase().trim();
 
         // Loan calculator
@@ -1832,7 +1850,7 @@ const AI = {
         const discMatch = q.match(/(\d+\.?\d*)\s*%?\s*(?:off|discount)\s*(?:on|of|from)?\s*[₦$€£¥]?\s*([\d,]+\.?\d*)/i);
         if (discMatch && /(off|discount)/i.test(q)) {
             const pct = +discMatch[1], price = +discMatch[2].replace(/,/g, '');
-            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '';
+            const sym = this.curSym(q);
             const save = price * pct / 100;
             return { message: `${pct}% off ${sym}${price.toLocaleString()}:`, result: `Save ${sym}${this.fmt(save, 2)} → pay ${sym}${this.fmt(price - save, 2)}` };
         }
@@ -1841,17 +1859,17 @@ const AI = {
         const addTaxMatch = q.match(/add\s+(\d+\.?\d*)\s*%\s*(?:sales\s+)?(?:tax|vat)?\s*(?:to|on)\s*[₦$€£¥]?\s*([\d,]+\.?\d*)/i);
         if (addTaxMatch) {
             const pct = +addTaxMatch[1], base = +addTaxMatch[2].replace(/,/g, '');
-            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '';
+            const sym = this.curSym(q);
             const tax = base * pct / 100;
             return { message: `Adding ${pct}% to ${sym}${base.toLocaleString()}:`, result: `Tax ${sym}${this.fmt(tax, 2)} → total ${sym}${this.fmt(base + tax, 2)}` };
         }
 
         // ===== Split bill (with optional tip) =====
-        const splitMatch = q.match(/split\s+[₦$€£¥]?\s*([\d,]+\.?\d*)\s*(?:among|between|by|with|for)?\s*(\d+)\s*(?:people|persons?|ways|friends|of us)?/i);
+        const splitMatch = q.match(/split\s+[₦$€£¥]?\s*([\d,]+\.?\d*)[^\d]*?(?:among|between|by|with|for)\s+(\d+)/i);
         if (splitMatch) {
             const bill = +splitMatch[1].replace(/,/g, ''), people = Math.max(1, +splitMatch[2]);
             const tipM = q.match(/(\d+\.?\d*)\s*%\s*tip/i); const tipPct = tipM ? +tipM[1] : 0;
-            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '$';
+            const sym = this.curSym(q);
             const total = bill * (1 + tipPct / 100);
             return { message: `Splitting ${sym}${bill.toLocaleString()}${tipPct ? ` + ${tipPct}% tip` : ''} among ${people}:`, result: `Total ${sym}${this.fmt(total, 2)} → ${sym}${this.fmt(total / people, 2)} each` };
         }
@@ -1863,11 +1881,11 @@ const AI = {
             const chg = a === 0 ? NaN : (b - a) / Math.abs(a) * 100;
             return { message: `Percentage change from ${a} to ${b}:`, result: isNaN(chg) ? 'undefined (base is 0)' : `${chg >= 0 ? '+' : ''}${this.fmt(chg, 2)}% (${chg >= 0 ? 'increase' : 'decrease'})` };
         }
-        const incDec = q.match(/(increase|raise|grow|decrease|reduce|lower)\s+[₦$€£¥]?\s*([\d,]+\.?\d*)\s+by\s+(\d+\.?\d*)\s*%/i);
+        const incDec = q.match(/(increase|raise|grow|decrease|reduce|lower)\s+[₦$€£¥]?\s*([\d,]+\.?\d*)\s+(?:[a-z]+\s+)?by\s+(\d+\.?\d*)\s*%/i);
         if (incDec) {
             const dir = /incre|raise|grow/i.test(incDec[1]) ? 1 : -1;
             const base = +incDec[2].replace(/,/g, ''), pct = +incDec[3];
-            const cur = this.detectCurrencyInQuery(q); const sym = cur ? CURRENCIES[cur].symbol : '';
+            const sym = this.curSym(q);
             const delta = base * pct / 100;
             return { message: `${dir > 0 ? 'Increase' : 'Decrease'} ${sym}${base.toLocaleString()} by ${pct}%:`, result: `${sym}${this.fmt(base + dir * delta, 2)} (${dir > 0 ? '+' : '−'}${sym}${this.fmt(delta, 2)})` };
         }
@@ -1905,9 +1923,10 @@ const AI = {
             const tipPct = parseFloat(tipMatch[2]);
             const tip = bill * tipPct / 100;
             const total = bill + tip;
+            const sym = this.curSym(q);
             return {
-                message: `For a $${bill} bill at ${tipPct}% tip:`,
-                result: `Tip: $${tip.toFixed(2)} | Total: $${total.toFixed(2)}`
+                message: `For a ${sym}${bill} bill at ${tipPct}% tip:`,
+                result: `Tip: ${sym}${tip.toFixed(2)} | Total: ${sym}${total.toFixed(2)}`
             };
         }
 
@@ -2027,16 +2046,83 @@ const AI = {
     },
 
     detectCurrencyInQuery(q) {
-        if (q.includes('₦') || /\bnaira\b|\bngn\b/i.test(q)) return 'NGN';
-        if (q.includes('$') || /\busd\b|\bdollars?\b/i.test(q)) return 'USD';
-        if (q.includes('€') || /\beuros?\b|\beur\b/i.test(q)) return 'EUR';
-        if (q.includes('£') || /\bpounds?\b|\bgbp\b/i.test(q)) return 'GBP';
-        if (q.includes('¥') || /\byen\b|\byuan\b/i.test(q)) return 'JPY';
-        if (/\brupees?\b|\binr\b/i.test(q)) return 'INR';
-        if (/\brand\b|\bzar\b/i.test(q)) return 'ZAR';
-        if (/\bcedis?\b|\bghs\b/i.test(q)) return 'GHS';
-        if (/\bshillings?\b|\bkes\b/i.test(q)) return 'KES';
+        const s = ' ' + q.toLowerCase() + ' ';
+        // 1) explicit 3-letter ISO code (skip a few that collide with English words)
+        const skip = new Set(['try', 'pen', 'ars', 'ron', 'cop', 'top']);
+        for (const code of Object.keys(CURRENCIES)) {
+            const lc = code.toLowerCase();
+            if (!skip.has(lc) && new RegExp('\\b' + lc + '\\b').test(s)) return code;
+        }
+        // 2) names / aliases (word-boundary; longer phrases first)
+        const names = {
+            'us dollar': 'USD', 'canadian dollar': 'CAD', 'australian dollar': 'AUD',
+            'singapore dollar': 'SGD', 'hong kong dollar': 'HKD', 'new zealand dollar': 'NZD',
+            'egyptian pound': 'EGP', 'indian rupee': 'INR', 'pakistani rupee': 'PKR',
+            'sri lankan rupee': 'LKR', 'nepalese rupee': 'NPR', 'philippine peso': 'PHP',
+            'mexican peso': 'MXN', 'argentine peso': 'ARS', 'chilean peso': 'CLP', 'colombian peso': 'COP',
+            'swiss franc': 'CHF', 'turkish lira': 'TRY', 'saudi riyal': 'SAR', 'qatari riyal': 'QAR',
+            'kuwaiti dinar': 'KWD', 'uae dirham': 'AED', 'moroccan dirham': 'MAD',
+            'kenyan shilling': 'KES', 'ugandan shilling': 'UGX', 'tanzanian shilling': 'TZS',
+            naira: 'NGN', cedi: 'GHS', cedis: 'GHS', rand: 'ZAR', shilling: 'KES', shillings: 'KES',
+            dollar: 'USD', dollars: 'USD', buck: 'USD', bucks: 'USD',
+            euro: 'EUR', euros: 'EUR', pound: 'GBP', pounds: 'GBP', sterling: 'GBP', quid: 'GBP',
+            yen: 'JPY', yuan: 'CNY', renminbi: 'CNY', rmb: 'CNY',
+            rupee: 'INR', rupees: 'INR', peso: 'MXN', pesos: 'MXN', won: 'KRW',
+            franc: 'CHF', francs: 'CHF', krona: 'SEK', kronor: 'SEK', krone: 'NOK',
+            zloty: 'PLN', 'złoty': 'PLN', lira: 'TRY', ruble: 'RUB', rubles: 'RUB',
+            hryvnia: 'UAH', real: 'BRL', reais: 'BRL', shekel: 'ILS', shekels: 'ILS',
+            dirham: 'AED', riyal: 'SAR', rial: 'OMR', dinar: 'KWD',
+            baht: 'THB', ringgit: 'MYR', rupiah: 'IDR', dong: 'VND', taka: 'BDT',
+            birr: 'ETB', tenge: 'KZT', bitcoin: 'BTC', ethereum: 'ETH', ether: 'ETH',
+            gold: 'XAU', silver: 'XAG'
+        };
+        for (const k of Object.keys(names).sort((a, b) => b.length - a.length)) {
+            if (new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(s)) return names[k];
+        }
+        // 3) unique currency symbols
+        const symMap = { '₦': 'NGN', '€': 'EUR', '£': 'GBP', '₹': 'INR', '₵': 'GHS', '₩': 'KRW', '₽': 'RUB', '₺': 'TRY', '₴': 'UAH', '฿': 'THB', '₱': 'PHP', '₫': 'VND', '₪': 'ILS', '₸': 'KZT', '₿': 'BTC', '$': 'USD', '¥': 'JPY' };
+        for (const sym in symMap) if (q.includes(sym)) return symMap[sym];
         return null;
+    },
+
+    // Currency symbol for a query (any currency the user names), with a default.
+    curSym(q, def = 'USD') {
+        const c = this.detectCurrencyInQuery(q) || def;
+        return CURRENCIES[c] ? CURRENCIES[c].symbol : '';
+    },
+
+    // Translate common math phrasing from a few major languages into the
+    // English tokens the engine understands (basic offline multilingual support).
+    normalizeLanguage(text) {
+        let s = ' ' + text + ' ';
+        const rules = [
+            // percent
+            [/\bpor\s*ciento\b/gi, ' percent '], [/\bpour\s*cent\b/gi, ' percent '],
+            [/\bpor\s*cento\b/gi, ' percent '], [/\bprozent\b/gi, ' percent '],
+            // square root
+            [/\bra[ií]z\s+cuadrada\s+de\b/gi, ' square root of '],
+            [/\bracine\s+carr[eé]e?\s+de\b/gi, ' square root of '],
+            [/\braiz\s+quadrada\s+de\b/gi, ' square root of '],
+            [/\bwurzel\s+aus\b/gi, ' square root of '],
+            // triggers
+            [/\bcu[aá]nto\s+(?:es|son)\b/gi, ' what is '], [/\bcombien\s+(?:font|fait)\b/gi, ' what is '],
+            [/\bquanto\s+[eé](?=\s|$)/gi, ' what is '], [/\b(?:was\s+ist|wie\s*viel\s+ist)\b/gi, ' what is '],
+            [/\bresuelve\b|\br[eé]sous\b|\bresolva\b|\blöse\b/gi, ' solve '],
+            [/\bcalcula\b|\bcalcule[rz]?\b|\bberechne\b/gi, ' calculate '],
+            // divided by (before times so "por" inside "dividido por" is consumed first)
+            [/\bdividido\s+(?:por|entre)\b/gi, ' divided by '], [/\bdivis[eé]\s+par\b/gi, ' divided by '],
+            [/\bgeteilt\s+durch\b/gi, ' divided by '], [/\bentre\b/gi, ' divided by '],
+            [/\bsur\b/gi, ' divided by '], [/\bdurch\b/gi, ' divided by '],
+            // times
+            [/\bmultiplicado\s+por\b|\bmultipli[eé]\s+par\b|\bmultipliziert\s+mit\b/gi, ' times '],
+            [/\bfois\b|\bvezes\b|\bmal\b|\bpor\b/gi, ' times '],
+            // plus / minus
+            [/\bm[aá]s\b|\bmais\b/gi, ' plus '], [/\bmenos\b|\bmoins\b/gi, ' minus '],
+            // of (most ambiguous — last)
+            [/\bde\b|\bvon\b/gi, ' of ']
+        ];
+        for (const [re, rep] of rules) s = s.replace(re, rep);
+        return s.replace(/\s{2,}/g, ' ').trim();
     },
 
     parseFlexibleDate(str) {
