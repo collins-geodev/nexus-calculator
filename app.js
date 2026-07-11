@@ -21,7 +21,7 @@ const state = {
         sound: true,
         haptic: true,
         animations: true,
-        liveRates: false,
+        liveRates: true,
         decimalPlaces: 4,
         voiceLang: 'en-US',
         theme: 'dark'
@@ -40,6 +40,196 @@ const state = {
         to: 'ft',
         amount: 1,
         presets: []
+    },
+    ovulation: {
+        lastPeriod: null,
+        cycleLength: 28,
+        periodLength: 5,
+        luteal: 14,
+        monthsToPredict: 3,
+        calStart: 1,
+        irregular: false,
+        shortest: 26,
+        longest: 32,
+        result: null,
+        presets: []
+    },
+    loan: {
+        amount: 500000,
+        currency: 'NGN',
+        rate: 15,
+        rateType: 'annual',
+        term: 24,
+        termUnit: 'months',
+        loanType: 'amortized',
+        frequency: 'monthly',
+        startDate: null,
+        firstPayment: null,
+        downPayment: 0,
+        processingFee: 0,
+        insurance: 0,
+        extraPayment: 0,
+        balloon: 0,
+        grace: 0,
+        compounding: 'monthly',
+        result: null,
+        presets: []
+    },
+    tax: {
+        country: 'NG',
+        year: 2026,
+        currency: 'NGN',
+        incomeType: 'salary',
+        income: 800000,
+        period: 'monthly',
+        status: 'single',
+        startMonth: 1,
+        startDay: 1,
+        endMonth: 12,
+        endDay: 31,
+        pension: 0,
+        insurance: 0,
+        reliefs: 0,
+        deductions: 0,
+        allowances: 0,
+        credits: 0,
+        payePaid: 0,
+        whtPaid: 0,
+        vat: 0,
+        brackets: [],
+        result: null,
+        presets: []
+    }
+};
+
+// ===== MONTHS / DAYS =====
+const MONTHS = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+];
+const WEEKDAYS_SUN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WEEKDAYS_MON = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function daysInMonth(year, month0) {
+    return new Date(year, month0 + 1, 0).getDate();
+}
+
+function isLeapYear(year) {
+    return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+// ===== COUNTRY TAX PRESETS =====
+// Yearly progressive brackets in local currency. Tax laws change — users can edit.
+const TAX_PRESETS = {
+    NG: {
+        name: 'Nigeria',
+        currency: 'NGN',
+        cra: { base: 200000, percentOfGross: 0.20 }, // Consolidated Relief Allowance
+        brackets: [
+            { min: 0, max: 300000, rate: 7 },
+            { min: 300000, max: 600000, rate: 11 },
+            { min: 600000, max: 1100000, rate: 15 },
+            { min: 1100000, max: 1600000, rate: 19 },
+            { min: 1600000, max: 3200000, rate: 21 },
+            { min: 3200000, max: Infinity, rate: 24 }
+        ]
+    },
+    US: {
+        name: 'United States',
+        currency: 'USD',
+        cra: null,
+        brackets: [
+            { min: 0, max: 11600, rate: 10 },
+            { min: 11600, max: 47150, rate: 12 },
+            { min: 47150, max: 100525, rate: 22 },
+            { min: 100525, max: 191950, rate: 24 },
+            { min: 191950, max: 243725, rate: 32 },
+            { min: 243725, max: 609350, rate: 35 },
+            { min: 609350, max: Infinity, rate: 37 }
+        ]
+    },
+    GB: {
+        name: 'United Kingdom',
+        currency: 'GBP',
+        cra: { base: 12570, percentOfGross: 0 }, // Personal allowance
+        brackets: [
+            { min: 0, max: 37700, rate: 20 },
+            { min: 37700, max: 125140, rate: 40 },
+            { min: 125140, max: Infinity, rate: 45 }
+        ]
+    },
+    CA: {
+        name: 'Canada (Federal)',
+        currency: 'CAD',
+        cra: { base: 15705, percentOfGross: 0 },
+        brackets: [
+            { min: 0, max: 55867, rate: 15 },
+            { min: 55867, max: 111733, rate: 20.5 },
+            { min: 111733, max: 173205, rate: 26 },
+            { min: 173205, max: 246752, rate: 29 },
+            { min: 246752, max: Infinity, rate: 33 }
+        ]
+    },
+    ZA: {
+        name: 'South Africa',
+        currency: 'ZAR',
+        cra: { base: 17235, percentOfGross: 0 },
+        brackets: [
+            { min: 0, max: 237100, rate: 18 },
+            { min: 237100, max: 370500, rate: 26 },
+            { min: 370500, max: 512800, rate: 31 },
+            { min: 512800, max: 673000, rate: 36 },
+            { min: 673000, max: 857900, rate: 39 },
+            { min: 857900, max: 1817000, rate: 41 },
+            { min: 1817000, max: Infinity, rate: 45 }
+        ]
+    },
+    GH: {
+        name: 'Ghana',
+        currency: 'GHS',
+        cra: null,
+        brackets: [
+            { min: 0, max: 4824, rate: 0 },
+            { min: 4824, max: 6444, rate: 5 },
+            { min: 6444, max: 8364, rate: 10 },
+            { min: 8364, max: 44724, rate: 17.5 },
+            { min: 44724, max: 240444, rate: 25 },
+            { min: 240444, max: 600000, rate: 30 },
+            { min: 600000, max: Infinity, rate: 35 }
+        ]
+    },
+    KE: {
+        name: 'Kenya',
+        currency: 'KES',
+        cra: { base: 28800, percentOfGross: 0 },
+        brackets: [
+            { min: 0, max: 288000, rate: 10 },
+            { min: 288000, max: 388000, rate: 25 },
+            { min: 388000, max: 6000000, rate: 30 },
+            { min: 6000000, max: 9600000, rate: 32.5 },
+            { min: 9600000, max: Infinity, rate: 35 }
+        ]
+    },
+    EU: {
+        name: 'EU / Generic Template',
+        currency: 'EUR',
+        cra: null,
+        brackets: [
+            { min: 0, max: 10000, rate: 0 },
+            { min: 10000, max: 30000, rate: 20 },
+            { min: 30000, max: 80000, rate: 30 },
+            { min: 80000, max: 250000, rate: 40 },
+            { min: 250000, max: Infinity, rate: 45 }
+        ]
+    },
+    CUSTOM: {
+        name: 'Custom / Manual',
+        currency: 'USD',
+        cra: null,
+        brackets: [
+            { min: 0, max: 50000, rate: 10 },
+            { min: 50000, max: Infinity, rate: 20 }
+        ]
     }
 };
 
@@ -1410,6 +1600,120 @@ const AI = {
     analyze(query) {
         const q = query.toLowerCase().trim();
 
+        // Loan calculator
+        const loanMatch = q.match(/(?:loan|repayment|mortgage).*?(?:of\s+|for\s+)?[₦$€£¥]?\s*([\d,]+\.?\d*)[a-z]?\s*(?:over|for|across)?\s*(\d+)\s*(month|year|week|day)s?\s*(?:at|@)\s*(\d+\.?\d*)\s*%?/i);
+        if (loanMatch) {
+            const amount = parseFloat(loanMatch[1].replace(/,/g, ''));
+            const term = parseInt(loanMatch[2]);
+            const unit = loanMatch[3].toLowerCase() + 's';
+            const rate = parseFloat(loanMatch[4]);
+            const currency = this.detectCurrencyInQuery(q) || 'NGN';
+            const r = Loan.quickCalc(amount, rate, term, unit, currency);
+            const sym = CURRENCIES[currency]?.symbol || '';
+            return {
+                message: `Loan estimate: ${sym}${amount.toLocaleString()} over ${term} ${unit} at ${rate}% annual (amortized).<br>Open the <em>Loan</em> tab for the full schedule and chart.`,
+                result: `Monthly: ${sym}${r.payment.toLocaleString(undefined, { maximumFractionDigits: 2 })} | Total interest: ${sym}${r.totalInterest.toLocaleString(undefined, { maximumFractionDigits: 2 })} | Total repayment: ${sym}${r.totalRepayment.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            };
+        }
+
+        // Loan comparison
+        const compareMatch = q.match(/compare.*?(\d+)\s*(month|year)s?.*?(?:and|vs|versus)\s*(\d+)\s*(month|year)s?/i);
+        if (compareMatch && /loan/.test(q)) {
+            const amountMatch = q.match(/[₦$€£¥]?\s*([\d,]+\.?\d*)/);
+            const rateMatch = q.match(/(\d+\.?\d*)\s*%/);
+            const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 100000;
+            const rate = rateMatch ? parseFloat(rateMatch[1]) : 15;
+            const t1 = parseInt(compareMatch[1]);
+            const u1 = compareMatch[2].toLowerCase() + 's';
+            const t2 = parseInt(compareMatch[3]);
+            const u2 = compareMatch[4].toLowerCase() + 's';
+            const currency = this.detectCurrencyInQuery(q) || 'USD';
+            const r1 = Loan.quickCalc(amount, rate, t1, u1, currency);
+            const r2 = Loan.quickCalc(amount, rate, t2, u2, currency);
+            const sym = CURRENCIES[currency]?.symbol || '';
+            return {
+                message: `Comparing two loan terms for ${sym}${amount.toLocaleString()} at ${rate}%:`,
+                result: `${t1} ${u1}: payment ${sym}${r1.payment.toFixed(2)}, total ${sym}${r1.totalRepayment.toFixed(2)} | ${t2} ${u2}: payment ${sym}${r2.payment.toFixed(2)}, total ${sym}${r2.totalRepayment.toFixed(2)}`
+            };
+        }
+
+        // Ovulation
+        const ovMatch = q.match(/(?:ovulation|fertile|cycle|period).*?(?:start(?:ed)?|on|from)?\s*([a-z]+\s+\d{1,2}(?:,?\s*\d{4})?)/i);
+        if (ovMatch && /(?:ovulation|fertile|cycle|period|pregnant)/.test(q)) {
+            const cycleMatch = q.match(/cycle\s+(?:is\s+|of\s+)?(\d+)/);
+            const dateStr = ovMatch[1];
+            const date = this.parseFlexibleDate(dateStr);
+            if (date) {
+                const cycle = cycleMatch ? parseInt(cycleMatch[1]) : 28;
+                const ovulation = new Date(date);
+                ovulation.setDate(ovulation.getDate() + (cycle - 14));
+                const fertileStart = new Date(ovulation);
+                fertileStart.setDate(fertileStart.getDate() - 5);
+                const fertileEnd = new Date(ovulation);
+                fertileEnd.setDate(fertileEnd.getDate() + 1);
+                const nextPeriod = new Date(date);
+                nextPeriod.setDate(nextPeriod.getDate() + cycle);
+                const fmt = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                return {
+                    message: `Based on a ${cycle}-day cycle from last period ${fmt(date)}:<br><em>Disclaimer: estimate only — not medical advice.</em>`,
+                    result: `Ovulation: ${fmt(ovulation)} | Fertile window: ${fmt(fertileStart)} → ${fmt(fertileEnd)} | Next period: ${fmt(nextPeriod)}`
+                };
+            }
+        }
+
+        // Tax estimate
+        const taxMatch = q.match(/(?:tax|paye).*?(?:if\s+i\s+earn\s+|on\s+|for\s+|of\s+)[₦$€£¥]?\s*([\d,]+\.?\d*)\s*(monthly|yearly|annual|per\s+month|per\s+year|month|year)?/i);
+        if (taxMatch && /(?:tax|paye|payable|after\s+tax|net\s+income)/.test(q)) {
+            const amount = parseFloat(taxMatch[1].replace(/,/g, ''));
+            const periodWord = (taxMatch[2] || 'monthly').toLowerCase();
+            const monthly = /month/.test(periodWord);
+            const yearly = monthly ? amount * 12 : amount;
+            let country = 'NG';
+            if (/(united\s*states|usa|us\b|america)/.test(q)) country = 'US';
+            else if (/(united\s*kingdom|uk\b|britain)/.test(q)) country = 'GB';
+            else if (/canada/.test(q)) country = 'CA';
+            else if (/(south\s*africa|sa\b)/.test(q)) country = 'ZA';
+            else if (/ghana/.test(q)) country = 'GH';
+            else if (/kenya/.test(q)) country = 'KE';
+            else if (/nigeria/.test(q)) country = 'NG';
+            const r = Tax.quickCalc(yearly, country);
+            const sym = CURRENCIES[r.currency]?.symbol || '';
+            return {
+                message: `Estimate for ${TAX_PRESETS[country].name} on ${sym}${yearly.toLocaleString()} yearly (${monthly ? 'derived from monthly' : 'yearly input'}).<br><em>Disclaimer: estimate only — verify with a tax professional.</em>`,
+                result: `Tax: ${sym}${r.tax.toLocaleString(undefined, { maximumFractionDigits: 2 })} | Net: ${sym}${r.net.toLocaleString(undefined, { maximumFractionDigits: 2 })} | Effective: ${r.effective.toFixed(2)}%`
+            };
+        }
+
+        // Net income / after tax
+        if (/(?:net\s*(?:income|pay|salary)|after\s*tax)/.test(q)) {
+            const amtMatch = q.match(/[₦$€£¥]?\s*([\d,]+\.?\d*)/);
+            if (amtMatch) {
+                const amount = parseFloat(amtMatch[1].replace(/,/g, ''));
+                const monthly = /month/.test(q);
+                const yearly = monthly ? amount * 12 : amount;
+                const r = Tax.quickCalc(yearly, 'NG');
+                const sym = CURRENCIES[r.currency]?.symbol || '';
+                return {
+                    message: `Net income calculation (Nigeria preset, edit in Tax tab for other countries):`,
+                    result: `Yearly Net: ${sym}${r.net.toLocaleString(undefined, { maximumFractionDigits: 2 })} | Monthly Net: ${sym}${(r.net / 12).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                };
+            }
+        }
+
+        // Explain how loan/tax was calculated
+        if (/(?:explain|how).*?(?:loan|interest)/.test(q)) {
+            return {
+                message: `<em>Amortized loan formula:</em> Payment = P × r × (1 + r)<sup>n</sup> / ((1 + r)<sup>n</sup> − 1)<br>P = principal · r = periodic interest rate · n = number of payments. Each payment splits between interest (on remaining balance) and principal repayment.`,
+                result: null
+            };
+        }
+        if (/(?:explain|how).*?(?:tax|bracket)/.test(q)) {
+            return {
+                message: `<em>Progressive tax:</em> Each portion of income falls into a bracket and is taxed at that bracket's rate. Open the Tax tab to see each bracket's contribution to your total tax.`,
+                result: null
+            };
+        }
+
         // Percentage
         const pctMatch = q.match(/(\d+\.?\d*)\s*(?:%|percent)\s*of\s*(\d+\.?\d*)/);
         if (pctMatch) {
@@ -1562,9 +1866,36 @@ const AI = {
                     <li>"how many km in 10 miles"</li>
                     <li>"average of 10, 20, 30"</li>
                     <li>"area of circle radius 5"</li>
+                    <li>"calculate loan repayment for 500000 over 24 months at 18%"</li>
+                    <li>"ovulation if my last period started May 5 and cycle is 28 days"</li>
+                    <li>"estimate annual tax if I earn 800000 monthly in Nigeria"</li>
                 </ul>`,
             result: null
         };
+    },
+
+    detectCurrencyInQuery(q) {
+        if (q.includes('₦') || /\bnaira\b|\bngn\b/i.test(q)) return 'NGN';
+        if (q.includes('$') || /\busd\b|\bdollars?\b/i.test(q)) return 'USD';
+        if (q.includes('€') || /\beuros?\b|\beur\b/i.test(q)) return 'EUR';
+        if (q.includes('£') || /\bpounds?\b|\bgbp\b/i.test(q)) return 'GBP';
+        if (q.includes('¥') || /\byen\b|\byuan\b/i.test(q)) return 'JPY';
+        if (/\brupees?\b|\binr\b/i.test(q)) return 'INR';
+        if (/\brand\b|\bzar\b/i.test(q)) return 'ZAR';
+        if (/\bcedis?\b|\bghs\b/i.test(q)) return 'GHS';
+        if (/\bshillings?\b|\bkes\b/i.test(q)) return 'KES';
+        return null;
+    },
+
+    parseFlexibleDate(str) {
+        const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+        const m = str.toLowerCase().match(/([a-z]+)\s+(\d{1,2})(?:,?\s*(\d{4}))?/);
+        if (!m) return null;
+        const month = months.findIndex(mo => mo.startsWith(m[1].slice(0, 3)));
+        if (month < 0) return null;
+        const day = parseInt(m[2]);
+        const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+        return new Date(year, month, day);
     },
 
     matchCurrency(str) {
@@ -1657,6 +1988,1173 @@ const AI = {
             if (q.includes(key)) return { message: val, result: null };
         }
         return { message: 'I can explain: quadratic formula, Pythagorean theorem, pi, euler, prime numbers, factorial, logarithm, derivative, integral', result: null };
+    }
+};
+
+// ===== OVULATION CALCULATOR =====
+const Ovulation = {
+    init() {
+        this.loadFromState();
+        this.bindEvents();
+        this.renderPresets();
+    },
+
+    loadFromState() {
+        if (state.ovulation.lastPeriod) document.getElementById('ovLastPeriod').value = state.ovulation.lastPeriod;
+        document.getElementById('ovCycleLength').value = state.ovulation.cycleLength;
+        document.getElementById('ovPeriodLength').value = state.ovulation.periodLength;
+        document.getElementById('ovLuteal').value = state.ovulation.luteal;
+        document.getElementById('ovMonths').value = state.ovulation.monthsToPredict;
+        document.getElementById('ovCalStart').value = state.ovulation.calStart;
+        document.getElementById('ovIrregular').checked = state.ovulation.irregular;
+        document.getElementById('ovShortest').value = state.ovulation.shortest;
+        document.getElementById('ovLongest').value = state.ovulation.longest;
+        this.toggleIrregular();
+    },
+
+    bindEvents() {
+        document.getElementById('ovCalcBtn').addEventListener('click', () => { hapticPulse(15); this.calculate(); });
+        document.getElementById('ovResetBtn').addEventListener('click', () => this.reset());
+        document.getElementById('ovCopyBtn').addEventListener('click', () => this.copySummary());
+        document.getElementById('ovSaveBtn').addEventListener('click', () => this.save());
+        document.getElementById('ovIrregular').addEventListener('change', () => this.toggleIrregular());
+    },
+
+    toggleIrregular() {
+        const on = document.getElementById('ovIrregular').checked;
+        document.getElementById('ovShortest').disabled = !on;
+        document.getElementById('ovLongest').disabled = !on;
+    },
+
+    readInputs() {
+        const lastPeriod = document.getElementById('ovLastPeriod').value;
+        const cycleLength = parseInt(document.getElementById('ovCycleLength').value) || 28;
+        const periodLength = parseInt(document.getElementById('ovPeriodLength').value) || 5;
+        const luteal = parseInt(document.getElementById('ovLuteal').value) || 14;
+        const monthsToPredict = parseInt(document.getElementById('ovMonths').value) || 3;
+        const calStart = parseInt(document.getElementById('ovCalStart').value) || 0;
+        const irregular = document.getElementById('ovIrregular').checked;
+        const shortest = parseInt(document.getElementById('ovShortest').value) || 26;
+        const longest = parseInt(document.getElementById('ovLongest').value) || 32;
+        return { lastPeriod, cycleLength, periodLength, luteal, monthsToPredict, calStart, irregular, shortest, longest };
+    },
+
+    validate(i) {
+        if (!i.lastPeriod) return 'Please select the first day of your last period.';
+        if (i.cycleLength < 21 || i.cycleLength > 45) return 'Cycle length must be between 21 and 45 days.';
+        if (i.periodLength < 2 || i.periodLength > 10) return 'Period length must be between 2 and 10 days.';
+        if (i.periodLength >= i.cycleLength) return 'Period length cannot exceed cycle length.';
+        if (i.luteal < 10 || i.luteal > 16) return 'Luteal phase must be between 10 and 16 days.';
+        if (i.irregular && i.shortest >= i.longest) return 'Shortest cycle must be less than longest cycle.';
+        return null;
+    },
+
+    calculate() {
+        const i = this.readInputs();
+        const err = this.validate(i);
+        if (err) { showToast(err, 'error', 3000); return; }
+
+        Object.assign(state.ovulation, i);
+
+        const baseDate = this.parseLocalDate(i.lastPeriod);
+        const cycles = [];
+        for (let n = 0; n < i.monthsToPredict; n++) {
+            let cycleLen = i.cycleLength;
+            if (i.irregular) {
+                cycleLen = Math.round((i.shortest + i.longest) / 2);
+            }
+            const periodStart = new Date(baseDate);
+            periodStart.setDate(periodStart.getDate() + n * cycleLen);
+            const periodEnd = new Date(periodStart);
+            periodEnd.setDate(periodEnd.getDate() + i.periodLength - 1);
+            const nextPeriod = new Date(periodStart);
+            nextPeriod.setDate(nextPeriod.getDate() + cycleLen);
+            const ovulation = new Date(nextPeriod);
+            ovulation.setDate(ovulation.getDate() - i.luteal);
+            const fertileStart = new Date(ovulation);
+            fertileStart.setDate(fertileStart.getDate() - 5);
+            const fertileEnd = new Date(ovulation);
+            fertileEnd.setDate(fertileEnd.getDate() + 1);
+            const peakStart = new Date(ovulation);
+            peakStart.setDate(peakStart.getDate() - 2);
+            const peakEnd = new Date(ovulation);
+            const pregTest = new Date(ovulation);
+            pregTest.setDate(pregTest.getDate() + 14);
+
+            cycles.push({
+                cycleNumber: n + 1,
+                periodStart, periodEnd, nextPeriod,
+                ovulation, fertileStart, fertileEnd,
+                peakStart, peakEnd, pregTest,
+                cycleLen
+            });
+        }
+
+        state.ovulation.result = cycles;
+        this.renderResults(cycles, i);
+        playSound(700, 60);
+    },
+
+    parseLocalDate(yyyymmdd) {
+        const [y, m, d] = yyyymmdd.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    },
+
+    formatDate(date) {
+        return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    },
+
+    renderResults(cycles, inputs) {
+        document.getElementById('ovResults').style.display = '';
+        const first = cycles[0];
+
+        document.getElementById('ovOvulationDate').textContent = this.formatDate(first.ovulation);
+        document.getElementById('ovFertileWindow').textContent =
+            `${this.formatDate(first.fertileStart)} → ${this.formatDate(first.fertileEnd)}`;
+        document.getElementById('ovNextPeriod').textContent = this.formatDate(first.nextPeriod);
+        document.getElementById('ovPeakDays').textContent =
+            `${this.formatDate(first.peakStart)} → ${this.formatDate(first.peakEnd)}`;
+        document.getElementById('ovPregTest').textContent = this.formatDate(first.pregTest);
+        document.getElementById('ovCycleSummary').textContent =
+            `${inputs.cycleLength}-day cycle, ${inputs.periodLength}-day period, ${inputs.luteal}-day luteal`;
+
+        this.renderCalendar(cycles, inputs);
+    },
+
+    renderCalendar(cycles, inputs) {
+        const wrap = document.getElementById('ovCalendar');
+        wrap.innerHTML = '';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const weekdays = inputs.calStart === 1 ? WEEKDAYS_MON : WEEKDAYS_SUN;
+
+        cycles.forEach(c => {
+            const monthDate = new Date(c.periodStart.getFullYear(), c.periodStart.getMonth(), 1);
+            const monthCard = document.createElement('div');
+            monthCard.className = 'calendar-month';
+            monthCard.innerHTML = `
+                <div class="cal-month-header">${MONTHS[monthDate.getMonth()]} ${monthDate.getFullYear()} — Cycle ${c.cycleNumber}</div>
+                <div class="cal-weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
+                <div class="cal-grid" id="cal-grid-${c.cycleNumber}"></div>
+            `;
+            wrap.appendChild(monthCard);
+
+            const grid = monthCard.querySelector('.cal-grid');
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const offset = (firstDay - inputs.calStart + 7) % 7;
+            const days = daysInMonth(year, month);
+
+            for (let p = 0; p < offset; p++) {
+                grid.insertAdjacentHTML('beforeend', '<span class="cal-day empty"></span>');
+            }
+            for (let d = 1; d <= days; d++) {
+                const cellDate = new Date(year, month, d);
+                cellDate.setHours(0, 0, 0, 0);
+                const classes = ['cal-day'];
+                if (cellDate >= c.periodStart && cellDate <= c.periodEnd) classes.push('period');
+                if (cellDate >= c.fertileStart && cellDate <= c.fertileEnd) classes.push('fertile');
+                if (cellDate.getTime() === c.ovulation.getTime()) classes.push('ovulation');
+                if (cellDate.getTime() === today.getTime()) classes.push('today');
+                grid.insertAdjacentHTML('beforeend', `<span class="${classes.join(' ')}">${d}</span>`);
+            }
+        });
+    },
+
+    reset() {
+        state.ovulation.lastPeriod = null;
+        document.getElementById('ovLastPeriod').value = '';
+        document.getElementById('ovCycleLength').value = 28;
+        document.getElementById('ovPeriodLength').value = 5;
+        document.getElementById('ovLuteal').value = 14;
+        document.getElementById('ovMonths').value = 3;
+        document.getElementById('ovIrregular').checked = false;
+        document.getElementById('ovResults').style.display = 'none';
+        this.toggleIrregular();
+        showToast('Ovulation calculator reset', 'info', 1500);
+    },
+
+    copySummary() {
+        if (!state.ovulation.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const first = state.ovulation.result[0];
+        const text = [
+            `Ovulation Calculator Summary`,
+            `Ovulation: ${this.formatDate(first.ovulation)}`,
+            `Fertile Window: ${this.formatDate(first.fertileStart)} → ${this.formatDate(first.fertileEnd)}`,
+            `Next Period: ${this.formatDate(first.nextPeriod)}`,
+            `Pregnancy Test: ${this.formatDate(first.pregTest)}`,
+            `Cycle: ${state.ovulation.cycleLength} days`
+        ].join('\n');
+        navigator.clipboard.writeText(text).then(
+            () => showToast('Summary copied', 'success', 1500),
+            () => showToast('Copy failed', 'error', 1500)
+        );
+    },
+
+    save() {
+        if (!state.ovulation.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const preset = {
+            id: Date.now(),
+            label: `${state.ovulation.cycleLength}d cycle from ${state.ovulation.lastPeriod}`,
+            data: {
+                lastPeriod: state.ovulation.lastPeriod,
+                cycleLength: state.ovulation.cycleLength,
+                periodLength: state.ovulation.periodLength,
+                luteal: state.ovulation.luteal,
+                monthsToPredict: state.ovulation.monthsToPredict,
+                calStart: state.ovulation.calStart,
+                irregular: state.ovulation.irregular,
+                shortest: state.ovulation.shortest,
+                longest: state.ovulation.longest
+            }
+        };
+        state.ovulation.presets.unshift(preset);
+        if (state.ovulation.presets.length > 20) state.ovulation.presets.pop();
+        Storage.save('ovulationPresets', state.ovulation.presets);
+        this.renderPresets();
+        showToast('Cycle saved', 'success', 1500);
+    },
+
+    renderPresets() {
+        const list = document.getElementById('ovulationPresets');
+        if (!list) return;
+        if (state.ovulation.presets.length === 0) {
+            list.innerHTML = '<div class="presets-empty">No saved cycles yet</div>';
+            return;
+        }
+        list.innerHTML = state.ovulation.presets.map(p => `
+            <div class="preset-chip" data-id="${p.id}">
+                <span>${p.label}</span>
+                <button class="remove-preset" data-id="${p.id}">×</button>
+            </div>
+        `).join('');
+        list.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-preset')) return;
+                const id = parseInt(chip.dataset.id);
+                const preset = state.ovulation.presets.find(p => p.id === id);
+                if (preset) {
+                    Object.assign(state.ovulation, preset.data);
+                    this.loadFromState();
+                    this.calculate();
+                }
+            });
+        });
+        list.querySelectorAll('.remove-preset').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                state.ovulation.presets = state.ovulation.presets.filter(p => p.id !== parseInt(btn.dataset.id));
+                Storage.save('ovulationPresets', state.ovulation.presets);
+                this.renderPresets();
+                showToast('Cycle removed', 'info', 1200);
+            });
+        });
+    }
+};
+
+// ===== LOAN CALCULATOR =====
+const Loan = {
+    init() {
+        this.populateCurrency();
+        this.loadFromState();
+        this.bindEvents();
+        this.renderPresets();
+    },
+
+    populateCurrency() {
+        const sel = document.getElementById('loanCurrency');
+        sel.innerHTML = Object.entries(CURRENCIES).map(([code, d]) =>
+            `<option value="${code}">${d.flag} ${code} — ${d.name}</option>`
+        ).join('');
+        sel.value = state.loan.currency;
+    },
+
+    loadFromState() {
+        const s = state.loan;
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById('loanAmount').value = s.amount;
+        document.getElementById('loanCurrency').value = s.currency;
+        document.getElementById('loanRate').value = s.rate;
+        document.getElementById('loanRateType').value = s.rateType;
+        document.getElementById('loanTerm').value = s.term;
+        document.getElementById('loanTermUnit').value = s.termUnit;
+        document.getElementById('loanType').value = s.loanType;
+        document.getElementById('loanFreq').value = s.frequency;
+        document.getElementById('loanStartDate').value = s.startDate || today;
+        document.getElementById('loanFirstPayment').value = s.firstPayment || this.addMonths(today, 1);
+        document.getElementById('loanDown').value = s.downPayment;
+        document.getElementById('loanProcFee').value = s.processingFee;
+        document.getElementById('loanInsurance').value = s.insurance;
+        document.getElementById('loanExtra').value = s.extraPayment;
+        document.getElementById('loanBalloon').value = s.balloon;
+        document.getElementById('loanGrace').value = s.grace;
+        document.getElementById('loanCompound').value = s.compounding;
+    },
+
+    addMonths(yyyymmdd, n) {
+        const d = new Date(yyyymmdd);
+        d.setMonth(d.getMonth() + n);
+        return d.toISOString().slice(0, 10);
+    },
+
+    bindEvents() {
+        document.getElementById('loanCalcBtn').addEventListener('click', () => { hapticPulse(15); this.calculate(); });
+        document.getElementById('loanResetBtn').addEventListener('click', () => this.reset());
+        document.getElementById('loanCopyBtn').addEventListener('click', () => this.copySummary());
+        document.getElementById('loanExportBtn').addEventListener('click', () => this.exportCSV());
+        document.getElementById('loanSaveBtn').addEventListener('click', () => this.save());
+        document.getElementById('loanScheduleToggle').addEventListener('click', () => {
+            const w = document.getElementById('loanScheduleWrap');
+            w.classList.toggle('collapsed');
+        });
+    },
+
+    readInputs() {
+        return {
+            amount: parseFloat(document.getElementById('loanAmount').value) || 0,
+            currency: document.getElementById('loanCurrency').value,
+            rate: parseFloat(document.getElementById('loanRate').value) || 0,
+            rateType: document.getElementById('loanRateType').value,
+            term: parseFloat(document.getElementById('loanTerm').value) || 0,
+            termUnit: document.getElementById('loanTermUnit').value,
+            loanType: document.getElementById('loanType').value,
+            frequency: document.getElementById('loanFreq').value,
+            startDate: document.getElementById('loanStartDate').value,
+            firstPayment: document.getElementById('loanFirstPayment').value,
+            downPayment: parseFloat(document.getElementById('loanDown').value) || 0,
+            processingFee: parseFloat(document.getElementById('loanProcFee').value) || 0,
+            insurance: parseFloat(document.getElementById('loanInsurance').value) || 0,
+            extraPayment: parseFloat(document.getElementById('loanExtra').value) || 0,
+            balloon: parseFloat(document.getElementById('loanBalloon').value) || 0,
+            grace: parseInt(document.getElementById('loanGrace').value) || 0,
+            compounding: document.getElementById('loanCompound').value
+        };
+    },
+
+    validate(i) {
+        if (i.amount <= 0) return 'Loan amount must be greater than zero.';
+        if (i.rate < 0) return 'Interest rate cannot be negative.';
+        if (i.term <= 0) return 'Loan term must be greater than zero.';
+        if (!i.currency) return 'Please select a currency.';
+        if (i.startDate && i.firstPayment && new Date(i.firstPayment) < new Date(i.startDate)) {
+            return 'First repayment date cannot be before the loan start date.';
+        }
+        const principal = i.amount - i.downPayment;
+        if (i.balloon > principal) return 'Balloon payment cannot exceed the principal.';
+        if (i.extraPayment < 0) return 'Extra payment cannot be negative.';
+        return null;
+    },
+
+    periodsPerYear(freq) {
+        return { daily: 365, weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, semiannually: 2, annually: 1 }[freq] || 12;
+    },
+
+    termToTotalDays(term, unit) {
+        return { days: 1, weeks: 7, months: 30.4375, years: 365.25 }[unit] * term;
+    },
+
+    numberOfPayments(i) {
+        const totalDays = this.termToTotalDays(i.term, i.termUnit);
+        const periodDays = 365 / this.periodsPerYear(i.frequency);
+        return Math.max(1, Math.round(totalDays / periodDays));
+    },
+
+    annualRate(i) {
+        if (i.rateType === 'annual') return i.rate / 100;
+        if (i.rateType === 'monthly') return (i.rate / 100) * 12;
+        if (i.rateType === 'daily') return (i.rate / 100) * 365;
+        return i.rate / 100;
+    },
+
+    periodicRate(i) {
+        return this.annualRate(i) / this.periodsPerYear(i.frequency);
+    },
+
+    addPeriod(date, freq, n = 1) {
+        const d = new Date(date);
+        switch (freq) {
+            case 'daily': d.setDate(d.getDate() + n); break;
+            case 'weekly': d.setDate(d.getDate() + 7 * n); break;
+            case 'biweekly': d.setDate(d.getDate() + 14 * n); break;
+            case 'monthly': d.setMonth(d.getMonth() + n); break;
+            case 'quarterly': d.setMonth(d.getMonth() + 3 * n); break;
+            case 'semiannually': d.setMonth(d.getMonth() + 6 * n); break;
+            case 'annually': d.setFullYear(d.getFullYear() + n); break;
+        }
+        return d;
+    },
+
+    calculate() {
+        const i = this.readInputs();
+        const err = this.validate(i);
+        if (err) { showToast(err, 'error', 3000); return; }
+
+        Object.assign(state.loan, i);
+        const principal = i.amount - i.downPayment;
+        const n = this.numberOfPayments(i);
+        const r = this.periodicRate(i);
+        const periods = this.periodsPerYear(i.frequency);
+        const annualR = this.annualRate(i);
+
+        let payment = 0;
+        let totalInterest = 0;
+        let totalPayments = 0;
+        let schedule = [];
+
+        if (i.loanType === 'amortized') {
+            payment = r === 0 ? principal / n : principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+            let balance = principal;
+            let payDate = i.firstPayment ? new Date(i.firstPayment) : (i.startDate ? this.addPeriod(new Date(i.startDate), i.frequency) : new Date());
+            for (let k = 1; k <= n; k++) {
+                const interest = balance * r;
+                let principalPaid = payment - interest;
+                let extra = (k > i.grace) ? i.extraPayment : 0;
+                let actualPayment = payment + extra;
+                if (k === n) {
+                    actualPayment = balance + interest;
+                    principalPaid = balance;
+                    extra = 0;
+                }
+                principalPaid = Math.min(principalPaid + extra, balance);
+                const closingBalance = Math.max(0, balance - principalPaid);
+                schedule.push({
+                    n: k, date: new Date(payDate),
+                    opening: balance, payment: actualPayment,
+                    principal: principalPaid, interest, fees: 0,
+                    extra, closing: closingBalance
+                });
+                totalInterest += interest;
+                totalPayments += actualPayment;
+                balance = closingBalance;
+                if (balance <= 0.01) break;
+                payDate = this.addPeriod(payDate, i.frequency);
+            }
+        } else if (i.loanType === 'flat') {
+            const years = this.termToTotalDays(i.term, i.termUnit) / 365.25;
+            totalInterest = principal * annualR * years;
+            payment = (principal + totalInterest) / n;
+            let payDate = i.firstPayment ? new Date(i.firstPayment) : new Date();
+            let balance = principal;
+            const principalPerPay = principal / n;
+            const interestPerPay = totalInterest / n;
+            for (let k = 1; k <= n; k++) {
+                schedule.push({
+                    n: k, date: new Date(payDate),
+                    opening: balance, payment,
+                    principal: principalPerPay, interest: interestPerPay,
+                    fees: 0, extra: 0, closing: balance - principalPerPay
+                });
+                balance -= principalPerPay;
+                totalPayments += payment;
+                payDate = this.addPeriod(payDate, i.frequency);
+            }
+        } else if (i.loanType === 'interest-only') {
+            payment = principal * r;
+            totalInterest = payment * n;
+            let payDate = i.firstPayment ? new Date(i.firstPayment) : new Date();
+            for (let k = 1; k <= n; k++) {
+                const isLast = k === n;
+                const finalPayment = isLast ? payment + principal : payment;
+                schedule.push({
+                    n: k, date: new Date(payDate),
+                    opening: principal, payment: finalPayment,
+                    principal: isLast ? principal : 0, interest: payment,
+                    fees: 0, extra: 0, closing: isLast ? 0 : principal
+                });
+                totalPayments += finalPayment;
+                payDate = this.addPeriod(payDate, i.frequency);
+            }
+        } else if (i.loanType === 'balloon') {
+            const balloon = i.balloon || principal * 0.3;
+            const amortizedPart = principal - balloon;
+            payment = r === 0 ? amortizedPart / n : amortizedPart * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+            let balance = principal;
+            let payDate = i.firstPayment ? new Date(i.firstPayment) : new Date();
+            for (let k = 1; k <= n; k++) {
+                const interest = balance * r;
+                let principalPaid = payment - interest;
+                let actualPayment = payment;
+                if (k === n) {
+                    actualPayment = payment + balloon;
+                    principalPaid += balloon;
+                }
+                const closingBalance = Math.max(0, balance - principalPaid);
+                schedule.push({
+                    n: k, date: new Date(payDate),
+                    opening: balance, payment: actualPayment,
+                    principal: principalPaid, interest, fees: 0,
+                    extra: 0, closing: closingBalance
+                });
+                totalInterest += interest;
+                totalPayments += actualPayment;
+                balance = closingBalance;
+                payDate = this.addPeriod(payDate, i.frequency);
+            }
+        } else if (i.loanType === 'simple') {
+            const years = this.termToTotalDays(i.term, i.termUnit) / 365.25;
+            totalInterest = principal * annualR * years;
+            payment = (principal + totalInterest) / n;
+            let payDate = i.firstPayment ? new Date(i.firstPayment) : new Date();
+            for (let k = 1; k <= n; k++) {
+                schedule.push({
+                    n: k, date: new Date(payDate),
+                    opening: principal - (principal / n) * (k - 1), payment,
+                    principal: principal / n, interest: totalInterest / n,
+                    fees: 0, extra: 0, closing: principal - (principal / n) * k
+                });
+                totalPayments += payment;
+                payDate = this.addPeriod(payDate, i.frequency);
+            }
+        }
+
+        const totalFees = i.processingFee + i.insurance;
+        const finalCost = totalPayments + totalFees + i.downPayment;
+        const payoffDate = schedule.length ? schedule[schedule.length - 1].date : new Date();
+        const effectiveRate = (Math.pow(1 + r, periods) - 1) * 100;
+
+        const result = {
+            principal, payment, totalInterest, totalPayments,
+            totalFees, finalCost, payoffDate, schedule,
+            numPayments: schedule.length, effectiveRate,
+            currency: i.currency, frequency: i.frequency
+        };
+        state.loan.result = result;
+        this.renderResults(result, i);
+        playSound(700, 60);
+    },
+
+    renderResults(r, i) {
+        document.getElementById('loanResults').style.display = '';
+        const sym = CURRENCIES[i.currency]?.symbol || '';
+        const fmt = (v) => sym + (v).toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+
+        document.getElementById('loanRepayment').textContent = fmt(r.payment) + ' / ' + i.frequency;
+        document.getElementById('loanTotalInterest').textContent = fmt(r.totalInterest);
+        document.getElementById('loanTotalRepayment').textContent = fmt(r.totalPayments);
+        document.getElementById('loanFees').textContent = fmt(r.totalFees);
+        document.getElementById('loanFinalCost').textContent = fmt(r.finalCost);
+        document.getElementById('loanPayoffDate').textContent = r.payoffDate.toLocaleDateString();
+        document.getElementById('loanPaymentCount').textContent = r.numPayments;
+        document.getElementById('loanEAR').textContent = r.effectiveRate.toFixed(2) + '%';
+
+        this.renderDonut(r);
+        this.renderLineChart(r);
+        this.renderSchedule(r, i);
+    },
+
+    renderDonut(r) {
+        const total = r.principal + r.totalInterest;
+        const pPct = (r.principal / total) * 100;
+        const iPct = 100 - pPct;
+        const wrap = document.getElementById('loanDonut');
+        wrap.innerHTML = `
+            <svg viewBox="0 0 200 200" width="100%" height="200">
+                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-primary)" stroke-width="35"
+                    stroke-dasharray="${pPct * 5.026} 502.6" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-secondary)" stroke-width="35"
+                    stroke-dasharray="${iPct * 5.026} 502.6" stroke-dashoffset="${-pPct * 5.026}" transform="rotate(-90 100 100)"/>
+                <text x="100" y="100" text-anchor="middle" dy=".3em" fill="var(--text-primary)" font-size="14" font-weight="600">Total Cost</text>
+            </svg>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot" style="background:var(--accent-primary)"></span>Principal ${pPct.toFixed(1)}%</span>
+                <span class="legend-item"><span class="legend-dot" style="background:var(--accent-secondary)"></span>Interest ${iPct.toFixed(1)}%</span>
+            </div>
+        `;
+    },
+
+    renderLineChart(r) {
+        const wrap = document.getElementById('loanLineChart');
+        const balances = r.schedule.map(s => s.closing);
+        if (!balances.length) { wrap.innerHTML = ''; return; }
+        const max = r.principal;
+        const w = 320, h = 160, pad = 20;
+        const points = balances.map((b, idx) => {
+            const x = pad + ((idx / Math.max(1, balances.length - 1)) * (w - 2 * pad));
+            const y = pad + ((1 - b / max) * (h - 2 * pad));
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        wrap.innerHTML = `
+            <svg viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="none" style="max-height:200px;">
+                <polyline fill="none" stroke="var(--accent-primary)" stroke-width="2" points="${points}"/>
+                <polyline fill="url(#loanFill)" stroke="none"
+                    points="${pad},${h - pad} ${points} ${w - pad},${h - pad}" opacity="0.25"/>
+                <defs>
+                    <linearGradient id="loanFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.6"/>
+                        <stop offset="100%" stop-color="var(--accent-primary)" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="chart-meta">Balance reduces over ${balances.length} payments</div>
+        `;
+    },
+
+    renderSchedule(r, i) {
+        const tbl = document.getElementById('loanScheduleTable');
+        const sym = CURRENCIES[i.currency]?.symbol || '';
+        const fmt = (v) => sym + v.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+        const rows = r.schedule.slice(0, 240).map(s => `
+            <tr>
+                <td>${s.n}</td>
+                <td>${s.date.toLocaleDateString()}</td>
+                <td>${fmt(s.opening)}</td>
+                <td>${fmt(s.payment)}</td>
+                <td>${fmt(s.principal)}</td>
+                <td>${fmt(s.interest)}</td>
+                <td>${fmt(s.extra)}</td>
+                <td>${fmt(s.closing)}</td>
+            </tr>
+        `).join('');
+        tbl.innerHTML = `
+            <thead>
+                <tr>
+                    <th>#</th><th>Date</th><th>Opening</th><th>Payment</th>
+                    <th>Principal</th><th>Interest</th><th>Extra</th><th>Closing</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        `;
+    },
+
+    exportCSV() {
+        if (!state.loan.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const r = state.loan.result;
+        const header = '#,Date,Opening,Payment,Principal,Interest,Extra,Closing\n';
+        const lines = r.schedule.map(s =>
+            [s.n, s.date.toISOString().slice(0, 10), s.opening.toFixed(2), s.payment.toFixed(2),
+             s.principal.toFixed(2), s.interest.toFixed(2), s.extra.toFixed(2), s.closing.toFixed(2)].join(',')
+        ).join('\n');
+        const blob = new Blob([header + lines], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `loan-schedule-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('CSV downloaded', 'success', 1500);
+    },
+
+    copySummary() {
+        if (!state.loan.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const r = state.loan.result;
+        const sym = CURRENCIES[r.currency]?.symbol || '';
+        const fmt = (v) => sym + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        const text = [
+            `Loan Summary (${r.currency})`,
+            `Principal: ${fmt(r.principal)}`,
+            `Repayment: ${fmt(r.payment)} / ${r.frequency}`,
+            `Total Interest: ${fmt(r.totalInterest)}`,
+            `Total Repayment: ${fmt(r.totalPayments)}`,
+            `Final Cost: ${fmt(r.finalCost)}`,
+            `Payoff: ${r.payoffDate.toLocaleDateString()}`,
+            `Payments: ${r.numPayments}`
+        ].join('\n');
+        navigator.clipboard.writeText(text).then(
+            () => showToast('Summary copied', 'success', 1500),
+            () => showToast('Copy failed', 'error', 1500)
+        );
+    },
+
+    save() {
+        if (!state.loan.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const i = this.readInputs();
+        const preset = {
+            id: Date.now(),
+            label: `${CURRENCIES[i.currency]?.symbol || ''}${i.amount.toLocaleString()} @ ${i.rate}% for ${i.term} ${i.termUnit}`,
+            data: i
+        };
+        state.loan.presets.unshift(preset);
+        if (state.loan.presets.length > 20) state.loan.presets.pop();
+        Storage.save('loanPresets', state.loan.presets);
+        this.renderPresets();
+        showToast('Loan saved', 'success', 1500);
+    },
+
+    reset() {
+        state.loan.result = null;
+        document.getElementById('loanResults').style.display = 'none';
+        document.getElementById('loanAmount').value = 500000;
+        document.getElementById('loanRate').value = 15;
+        document.getElementById('loanTerm').value = 24;
+        document.getElementById('loanDown').value = 0;
+        document.getElementById('loanExtra').value = 0;
+        document.getElementById('loanBalloon').value = 0;
+        showToast('Loan calculator reset', 'info', 1500);
+    },
+
+    renderPresets() {
+        const list = document.getElementById('loanPresets');
+        if (!list) return;
+        if (state.loan.presets.length === 0) {
+            list.innerHTML = '<div class="presets-empty">No saved loans yet</div>';
+            return;
+        }
+        list.innerHTML = state.loan.presets.map(p => `
+            <div class="preset-chip" data-id="${p.id}">
+                <span>${p.label}</span>
+                <button class="remove-preset" data-id="${p.id}">×</button>
+            </div>
+        `).join('');
+        list.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-preset')) return;
+                const id = parseInt(chip.dataset.id);
+                const preset = state.loan.presets.find(p => p.id === id);
+                if (preset) {
+                    Object.assign(state.loan, preset.data);
+                    this.loadFromState();
+                    this.calculate();
+                }
+            });
+        });
+        list.querySelectorAll('.remove-preset').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                state.loan.presets = state.loan.presets.filter(p => p.id !== parseInt(btn.dataset.id));
+                Storage.save('loanPresets', state.loan.presets);
+                this.renderPresets();
+                showToast('Loan removed', 'info', 1200);
+            });
+        });
+    },
+
+    // For AI integration
+    quickCalc(amount, rate, term, termUnit = 'months', currency = 'NGN') {
+        const i = {
+            amount, currency, rate, rateType: 'annual',
+            term, termUnit, loanType: 'amortized',
+            frequency: 'monthly', startDate: null, firstPayment: null,
+            downPayment: 0, processingFee: 0, insurance: 0,
+            extraPayment: 0, balloon: 0, grace: 0, compounding: 'monthly'
+        };
+        const principal = amount;
+        const n = this.numberOfPayments(i);
+        const r = this.periodicRate(i);
+        const payment = r === 0 ? principal / n : principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+        const totalRepayment = payment * n;
+        const totalInterest = totalRepayment - principal;
+        return { payment, totalRepayment, totalInterest, n };
+    }
+};
+
+// ===== TAX CALCULATOR =====
+const Tax = {
+    init() {
+        this.populateCurrency();
+        this.populateCountry();
+        this.populateDates();
+        this.loadFromState();
+        this.loadCountryPreset(state.tax.country);
+        this.bindEvents();
+        this.renderPresets();
+    },
+
+    populateCurrency() {
+        const sel = document.getElementById('taxCurrency');
+        sel.innerHTML = Object.entries(CURRENCIES).map(([code, d]) =>
+            `<option value="${code}">${d.flag} ${code} — ${d.name}</option>`
+        ).join('');
+        sel.value = state.tax.currency;
+    },
+
+    populateCountry() {
+        const sel = document.getElementById('taxCountry');
+        sel.innerHTML = Object.entries(TAX_PRESETS).map(([code, p]) =>
+            `<option value="${code}">${p.name}</option>`
+        ).join('');
+        sel.value = state.tax.country;
+    },
+
+    populateDates() {
+        const sm = document.getElementById('taxStartMonth');
+        const em = document.getElementById('taxEndMonth');
+        const sd = document.getElementById('taxStartDay');
+        const ed = document.getElementById('taxEndDay');
+        sm.innerHTML = MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+        em.innerHTML = MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+        sd.innerHTML = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+        ed.innerHTML = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+    },
+
+    loadFromState() {
+        const s = state.tax;
+        document.getElementById('taxCountry').value = s.country;
+        document.getElementById('taxYear').value = s.year;
+        document.getElementById('taxCurrency').value = s.currency;
+        document.getElementById('taxIncomeType').value = s.incomeType;
+        document.getElementById('taxIncome').value = s.income;
+        document.getElementById('taxPeriod').value = s.period;
+        document.getElementById('taxStatus').value = s.status;
+        document.getElementById('taxStartMonth').value = s.startMonth;
+        document.getElementById('taxStartDay').value = s.startDay;
+        document.getElementById('taxEndMonth').value = s.endMonth;
+        document.getElementById('taxEndDay').value = s.endDay;
+        document.getElementById('taxPension').value = s.pension;
+        document.getElementById('taxInsurance').value = s.insurance;
+        document.getElementById('taxReliefs').value = s.reliefs;
+        document.getElementById('taxDeductions').value = s.deductions;
+        document.getElementById('taxAllowances').value = s.allowances;
+        document.getElementById('taxCredits').value = s.credits;
+        document.getElementById('taxPayePaid').value = s.payePaid;
+        document.getElementById('taxWhtPaid').value = s.whtPaid;
+        document.getElementById('taxVat').value = s.vat;
+    },
+
+    loadCountryPreset(code) {
+        const preset = TAX_PRESETS[code];
+        if (!preset) return;
+        state.tax.country = code;
+        state.tax.currency = preset.currency;
+        state.tax.brackets = JSON.parse(JSON.stringify(preset.brackets));
+        document.getElementById('taxCurrency').value = preset.currency;
+        this.renderBracketsEditor();
+    },
+
+    renderBracketsEditor() {
+        const wrap = document.getElementById('taxBracketsEditor');
+        wrap.innerHTML = state.tax.brackets.map((b, idx) => `
+            <div class="bracket-row" data-idx="${idx}">
+                <input type="number" class="form-input" data-field="min" value="${b.min}" placeholder="Min">
+                <input type="number" class="form-input" data-field="max" value="${b.max === Infinity ? '' : b.max}" placeholder="Max (blank = ∞)">
+                <input type="number" class="form-input" data-field="rate" value="${b.rate}" placeholder="Rate %" step="any">
+                <button class="remove-bracket" data-idx="${idx}">×</button>
+            </div>
+        `).join('');
+        wrap.querySelectorAll('input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.closest('.bracket-row').dataset.idx);
+                const field = e.target.dataset.field;
+                let val = e.target.value;
+                if (field === 'max' && val === '') val = Infinity;
+                else val = parseFloat(val) || 0;
+                state.tax.brackets[idx][field] = val;
+            });
+        });
+        wrap.querySelectorAll('.remove-bracket').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.dataset.idx);
+                state.tax.brackets.splice(idx, 1);
+                this.renderBracketsEditor();
+            });
+        });
+    },
+
+    bindEvents() {
+        document.getElementById('taxCountry').addEventListener('change', (e) => {
+            this.loadCountryPreset(e.target.value);
+        });
+        document.getElementById('taxCalcBtn').addEventListener('click', () => { hapticPulse(15); this.calculate(); });
+        document.getElementById('taxResetBtn').addEventListener('click', () => this.reset());
+        document.getElementById('taxCopyBtn').addEventListener('click', () => this.copySummary());
+        document.getElementById('taxExportBtn').addEventListener('click', () => this.exportCSV());
+        document.getElementById('taxSaveBtn').addEventListener('click', () => this.save());
+        document.getElementById('taxAddBracket').addEventListener('click', () => {
+            const last = state.tax.brackets[state.tax.brackets.length - 1];
+            const min = last ? (last.max === Infinity ? last.min : last.max) : 0;
+            state.tax.brackets.push({ min, max: Infinity, rate: 0 });
+            this.renderBracketsEditor();
+        });
+    },
+
+    readInputs() {
+        return {
+            country: document.getElementById('taxCountry').value,
+            year: parseInt(document.getElementById('taxYear').value) || 2026,
+            currency: document.getElementById('taxCurrency').value,
+            incomeType: document.getElementById('taxIncomeType').value,
+            income: parseFloat(document.getElementById('taxIncome').value) || 0,
+            period: document.getElementById('taxPeriod').value,
+            status: document.getElementById('taxStatus').value,
+            startMonth: parseInt(document.getElementById('taxStartMonth').value) || 1,
+            startDay: parseInt(document.getElementById('taxStartDay').value) || 1,
+            endMonth: parseInt(document.getElementById('taxEndMonth').value) || 12,
+            endDay: parseInt(document.getElementById('taxEndDay').value) || 31,
+            pension: parseFloat(document.getElementById('taxPension').value) || 0,
+            insurance: parseFloat(document.getElementById('taxInsurance').value) || 0,
+            reliefs: parseFloat(document.getElementById('taxReliefs').value) || 0,
+            deductions: parseFloat(document.getElementById('taxDeductions').value) || 0,
+            allowances: parseFloat(document.getElementById('taxAllowances').value) || 0,
+            credits: parseFloat(document.getElementById('taxCredits').value) || 0,
+            payePaid: parseFloat(document.getElementById('taxPayePaid').value) || 0,
+            whtPaid: parseFloat(document.getElementById('taxWhtPaid').value) || 0,
+            vat: parseFloat(document.getElementById('taxVat').value) || 0
+        };
+    },
+
+    validate(i) {
+        if (i.income < 0) return 'Gross income must be ≥ 0.';
+        if (!i.currency) return 'Please select a currency.';
+        if (i.startMonth > i.endMonth || (i.startMonth === i.endMonth && i.startDay > i.endDay)) {
+            return 'Start date must be before end date.';
+        }
+        const startDays = daysInMonth(i.year, i.startMonth - 1);
+        const endDays = daysInMonth(i.year, i.endMonth - 1);
+        if (i.startDay > startDays) return `Start day exceeds days in ${MONTHS[i.startMonth - 1]} (${startDays}).`;
+        if (i.endDay > endDays) return `End day exceeds days in ${MONTHS[i.endMonth - 1]} (${endDays}).`;
+        const brackets = state.tax.brackets;
+        for (const b of brackets) {
+            if (b.rate < 0 || b.rate > 100) return 'Tax rates must be between 0% and 100%.';
+        }
+        const sorted = [...brackets].sort((a, b) => a.min - b.min);
+        for (let k = 1; k < sorted.length; k++) {
+            if (sorted[k].min < sorted[k - 1].max && sorted[k - 1].max !== Infinity) {
+                return 'Tax brackets must not overlap.';
+            }
+        }
+        return null;
+    },
+
+    incomeToYearly(amount, period) {
+        return { daily: 365, weekly: 52, monthly: 12, quarterly: 4, yearly: 1 }[period] * amount;
+    },
+
+    applyBrackets(taxable, brackets) {
+        const sorted = [...brackets].sort((a, b) => a.min - b.min);
+        let tax = 0;
+        let marginal = 0;
+        const breakdown = [];
+        for (const b of sorted) {
+            const upper = b.max === Infinity ? Infinity : b.max;
+            const inBracket = Math.max(0, Math.min(taxable, upper) - b.min);
+            if (inBracket > 0) {
+                const bTax = inBracket * (b.rate / 100);
+                tax += bTax;
+                marginal = b.rate;
+                breakdown.push({
+                    min: b.min, max: b.max, rate: b.rate,
+                    amount: inBracket, tax: bTax
+                });
+            }
+            if (taxable <= upper) break;
+        }
+        return { tax, marginal, breakdown };
+    },
+
+    calculate() {
+        const i = this.readInputs();
+        const err = this.validate(i);
+        if (err) { showToast(err, 'error', 3000); return; }
+        Object.assign(state.tax, i);
+
+        const yearlyGross = this.incomeToYearly(i.income, i.period);
+        const preset = TAX_PRESETS[i.country];
+        let cra = 0;
+        if (preset && preset.cra) {
+            cra = preset.cra.base + yearlyGross * preset.cra.percentOfGross;
+        }
+        const totalDeductions = i.pension + i.insurance + i.reliefs + i.deductions + i.allowances + cra;
+        const taxable = Math.max(0, yearlyGross - totalDeductions);
+        const { tax: rawTax, marginal, breakdown } = this.applyBrackets(taxable, state.tax.brackets);
+        const taxAfterCredits = Math.max(0, rawTax - i.credits);
+        const alreadyPaid = i.payePaid + i.whtPaid;
+        const taxPayable = Math.max(0, taxAfterCredits - alreadyPaid);
+        const netYearly = yearlyGross - taxAfterCredits - i.pension - i.insurance;
+        const effectiveRate = yearlyGross > 0 ? (taxAfterCredits / yearlyGross) * 100 : 0;
+
+        const result = {
+            yearlyGross, totalDeductions, taxable,
+            rawTax, taxAfterCredits, taxPayable,
+            netYearly, effectiveRate, marginal,
+            breakdown, cra, currency: i.currency
+        };
+        state.tax.result = result;
+        this.renderResults(result, i);
+        playSound(700, 60);
+    },
+
+    renderResults(r, i) {
+        document.getElementById('taxResults').style.display = '';
+        const sym = CURRENCIES[r.currency]?.symbol || '';
+        const fmt = (v) => sym + v.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+
+        document.getElementById('taxPayable').textContent = fmt(r.taxPayable);
+        document.getElementById('taxGross').textContent = fmt(r.yearlyGross);
+        document.getElementById('taxDedTotal').textContent = fmt(r.totalDeductions);
+        document.getElementById('taxTaxable').textContent = fmt(r.taxable);
+        document.getElementById('taxNet').textContent = fmt(r.netYearly);
+        document.getElementById('taxEffRate').textContent = r.effectiveRate.toFixed(2) + '%';
+        document.getElementById('taxMargRate').textContent = r.marginal.toFixed(2) + '%';
+        document.getElementById('taxMonthlyNet').textContent = fmt(r.netYearly / 12);
+        document.getElementById('taxDaily').textContent = fmt(r.taxAfterCredits / 365);
+
+        this.renderDonut(r);
+        this.renderBarChart(r);
+        this.renderBreakdownTable(r);
+    },
+
+    renderDonut(r) {
+        const total = r.yearlyGross || 1;
+        const tPct = (r.taxAfterCredits / total) * 100;
+        const nPct = 100 - tPct;
+        const wrap = document.getElementById('taxDonut');
+        wrap.innerHTML = `
+            <svg viewBox="0 0 200 200" width="100%" height="200">
+                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-success)" stroke-width="35"
+                    stroke-dasharray="${nPct * 5.026} 502.6" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-danger)" stroke-width="35"
+                    stroke-dasharray="${tPct * 5.026} 502.6" stroke-dashoffset="${-nPct * 5.026}" transform="rotate(-90 100 100)"/>
+                <text x="100" y="100" text-anchor="middle" dy=".3em" fill="var(--text-primary)" font-size="14" font-weight="600">Income</text>
+            </svg>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot" style="background:var(--accent-success)"></span>Net ${nPct.toFixed(1)}%</span>
+                <span class="legend-item"><span class="legend-dot" style="background:var(--accent-danger)"></span>Tax ${tPct.toFixed(1)}%</span>
+            </div>
+        `;
+    },
+
+    renderBarChart(r) {
+        const wrap = document.getElementById('taxBarChart');
+        if (!r.breakdown.length) { wrap.innerHTML = '<div class="chart-meta">No tax due in any bracket</div>'; return; }
+        const maxTax = Math.max(...r.breakdown.map(b => b.tax));
+        wrap.innerHTML = `
+            <div class="bar-chart-inner">
+                ${r.breakdown.map(b => {
+                    const pct = (b.tax / maxTax) * 100;
+                    return `
+                        <div class="bar-row">
+                            <span class="bar-label">${b.rate}% bracket</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+                            <span class="bar-value">${(CURRENCIES[r.currency]?.symbol || '')}${b.tax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    },
+
+    renderBreakdownTable(r) {
+        const tbl = document.getElementById('taxBreakdownTable');
+        const sym = CURRENCIES[r.currency]?.symbol || '';
+        const fmt = (v) => sym + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        const rows = r.breakdown.map(b => `
+            <tr>
+                <td>${fmt(b.min)} – ${b.max === Infinity ? '∞' : fmt(b.max)}</td>
+                <td>${b.rate}%</td>
+                <td>${fmt(b.amount)}</td>
+                <td>${fmt(b.tax)}</td>
+            </tr>
+        `).join('');
+        tbl.innerHTML = `
+            <thead><tr><th>Bracket</th><th>Rate</th><th>Amount in Bracket</th><th>Tax</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="4">No tax due</td></tr>'}</tbody>
+        `;
+    },
+
+    exportCSV() {
+        if (!state.tax.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const r = state.tax.result;
+        const header = 'BracketMin,BracketMax,Rate%,AmountInBracket,Tax\n';
+        const lines = r.breakdown.map(b =>
+            [b.min, b.max === Infinity ? 'Infinity' : b.max, b.rate, b.amount.toFixed(2), b.tax.toFixed(2)].join(',')
+        ).join('\n');
+        const summary = `\n\nSummary\nGross,${r.yearlyGross.toFixed(2)}\nDeductions,${r.totalDeductions.toFixed(2)}\nTaxable,${r.taxable.toFixed(2)}\nTax,${r.taxAfterCredits.toFixed(2)}\nNet,${r.netYearly.toFixed(2)}\nEffective,${r.effectiveRate.toFixed(2)}%\n`;
+        const blob = new Blob([header + lines + summary], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tax-breakdown-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('CSV downloaded', 'success', 1500);
+    },
+
+    copySummary() {
+        if (!state.tax.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const r = state.tax.result;
+        const sym = CURRENCIES[r.currency]?.symbol || '';
+        const fmt = (v) => sym + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        const text = [
+            `Tax Estimate (${r.currency})`,
+            `Gross (yearly): ${fmt(r.yearlyGross)}`,
+            `Total Deductions: ${fmt(r.totalDeductions)}`,
+            `Taxable: ${fmt(r.taxable)}`,
+            `Tax Payable: ${fmt(r.taxPayable)}`,
+            `Net Income: ${fmt(r.netYearly)}`,
+            `Effective Rate: ${r.effectiveRate.toFixed(2)}%`,
+            `Marginal Rate: ${r.marginal.toFixed(2)}%`
+        ].join('\n');
+        navigator.clipboard.writeText(text).then(
+            () => showToast('Summary copied', 'success', 1500),
+            () => showToast('Copy failed', 'error', 1500)
+        );
+    },
+
+    save() {
+        if (!state.tax.result) { showToast('Calculate first', 'warning', 1500); return; }
+        const i = this.readInputs();
+        const preset = {
+            id: Date.now(),
+            label: `${TAX_PRESETS[i.country]?.name || i.country} • ${CURRENCIES[i.currency]?.symbol || ''}${i.income.toLocaleString()}/${i.period}`,
+            data: { ...i, brackets: JSON.parse(JSON.stringify(state.tax.brackets)) }
+        };
+        state.tax.presets.unshift(preset);
+        if (state.tax.presets.length > 20) state.tax.presets.pop();
+        Storage.save('taxPresets', state.tax.presets);
+        this.renderPresets();
+        showToast('Tax estimate saved', 'success', 1500);
+    },
+
+    reset() {
+        state.tax.result = null;
+        document.getElementById('taxResults').style.display = 'none';
+        this.loadCountryPreset(state.tax.country);
+        showToast('Tax calculator reset', 'info', 1500);
+    },
+
+    renderPresets() {
+        const list = document.getElementById('taxPresets');
+        if (!list) return;
+        if (state.tax.presets.length === 0) {
+            list.innerHTML = '<div class="presets-empty">No saved estimates yet</div>';
+            return;
+        }
+        list.innerHTML = state.tax.presets.map(p => `
+            <div class="preset-chip" data-id="${p.id}">
+                <span>${p.label}</span>
+                <button class="remove-preset" data-id="${p.id}">×</button>
+            </div>
+        `).join('');
+        list.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-preset')) return;
+                const id = parseInt(chip.dataset.id);
+                const preset = state.tax.presets.find(p => p.id === id);
+                if (preset) {
+                    Object.assign(state.tax, preset.data);
+                    if (preset.data.brackets) state.tax.brackets = JSON.parse(JSON.stringify(preset.data.brackets));
+                    this.loadFromState();
+                    this.renderBracketsEditor();
+                    this.calculate();
+                }
+            });
+        });
+        list.querySelectorAll('.remove-preset').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                state.tax.presets = state.tax.presets.filter(p => p.id !== parseInt(btn.dataset.id));
+                Storage.save('taxPresets', state.tax.presets);
+                this.renderPresets();
+                showToast('Estimate removed', 'info', 1200);
+            });
+        });
+    },
+
+    // For AI integration: quick yearly tax calc with current country brackets
+    quickCalc(yearlyIncome, countryCode = 'NG') {
+        const preset = TAX_PRESETS[countryCode] || TAX_PRESETS.NG;
+        let cra = 0;
+        if (preset.cra) cra = preset.cra.base + yearlyIncome * preset.cra.percentOfGross;
+        const taxable = Math.max(0, yearlyIncome - cra);
+        const { tax, marginal } = this.applyBrackets(taxable, preset.brackets);
+        const net = yearlyIncome - tax;
+        const effective = yearlyIncome > 0 ? (tax / yearlyIncome) * 100 : 0;
+        return { yearlyIncome, taxable, tax, net, effective, marginal, currency: preset.currency };
     }
 };
 
@@ -1883,13 +3381,34 @@ function animateButton(selector) {
 }
 
 // ===== INITIALIZATION =====
+const SETTINGS_VERSION = 2;
+
 function init() {
     // Load saved state
     state.calculator.history = Storage.load('history', []);
     state.currency.presets = Storage.load('currencyPresets', []);
     state.metric.presets = Storage.load('metricPresets', []);
+    state.ovulation.presets = Storage.load('ovulationPresets', []);
+    state.loan.presets = Storage.load('loanPresets', []);
+    state.tax.presets = Storage.load('taxPresets', []);
     const savedSettings = Storage.load('settings');
-    if (savedSettings) Object.assign(state.settings, savedSettings);
+    if (savedSettings) {
+        if ((savedSettings.settingsVersion || 0) >= SETTINGS_VERSION) {
+            Object.assign(state.settings, savedSettings);
+        } else {
+            // v2 migration: force the four toggles ON, preserve other prefs
+            Object.assign(state.settings, savedSettings, {
+                sound: true,
+                haptic: true,
+                animations: true,
+                liveRates: true,
+                settingsVersion: SETTINGS_VERSION
+            });
+            Storage.save('settings', state.settings);
+        }
+    } else {
+        state.settings.settingsVersion = SETTINGS_VERSION;
+    }
 
     // Apply settings to UI
     document.getElementById('soundToggle').checked = state.settings.sound;
@@ -1906,6 +3425,9 @@ function init() {
     Currency.init();
     Metric.init();
     AI.init();
+    Ovulation.init();
+    Loan.init();
+    Tax.init();
     Voice.init();
     Calculator.renderHistory();
     Calculator.updateDisplay();

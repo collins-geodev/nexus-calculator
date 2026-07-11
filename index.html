@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Nexus Calculator - Smart AI Calculator</title>
-    <meta name="description" content="Smart AI calculator with 75+ currencies, 150+ unit conversions, voice commands, and 10 themes">
+    <meta name="description" content="Smart AI calculator with 75+ currencies, 150+ unit conversions, ovulation tracker, loan calculator, tax calculator, voice commands, and 10 themes">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
@@ -84,40 +84,61 @@
         <!-- Mode Tabs -->
         <div class="mode-tabs">
             <button class="mode-tab active" data-mode="calculator">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="4" y="2" width="16" height="20" rx="2"/>
-                    <line x1="8" y1="6" x2="16" y2="6"/>
-                    <line x1="8" y1="10" x2="8" y2="10"/>
-                    <line x1="12" y1="10" x2="12" y2="10"/>
-                    <line x1="16" y1="10" x2="16" y2="10"/>
-                    <line x1="8" y1="14" x2="8" y2="14"/>
-                    <line x1="12" y1="14" x2="12" y2="14"/>
-                    <line x1="16" y1="14" x2="16" y2="14"/>
-                    <line x1="8" y1="18" x2="16" y2="18"/>
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <rect x="4" y="3" width="16" height="18" rx="2"/>
+                    <line class="ti-screen" x1="7" y1="7" x2="17" y2="7" stroke-width="2.5"/>
+                    <circle class="ti-dot d1" cx="8" cy="13" r="0.8" fill="currentColor"/>
+                    <circle class="ti-dot d2" cx="12" cy="13" r="0.8" fill="currentColor"/>
+                    <circle class="ti-dot d3" cx="16" cy="13" r="0.8" fill="currentColor"/>
+                    <circle class="ti-dot d4" cx="8" cy="17" r="0.8" fill="currentColor"/>
+                    <circle class="ti-dot d5" cx="12" cy="17" r="0.8" fill="currentColor"/>
+                    <circle class="ti-dot d6" cx="16" cy="17" r="0.8" fill="currentColor"/>
                 </svg>
                 <span>Calculator</span>
             </button>
             <button class="mode-tab" data-mode="currency">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 18V6"/>
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path class="ti-symbol" d="M15 8.5h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-4M12 7v10"/>
                 </svg>
                 <span>Currency</span>
             </button>
             <button class="mode-tab" data-mode="metric">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/>
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <path d="M3 7l9-4 9 4v10l-9 4-9-4z"/>
+                    <path class="ti-edge" d="M3 7l9 5 9-5M12 12v9"/>
                 </svg>
                 <span>Metric</span>
             </button>
             <button class="mode-tab" data-mode="ai">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5z"/>
-                    <path d="M19 10a7 7 0 0 1-14 0M12 17v5M8 22h8"/>
-                    <circle cx="12" cy="8" r="1" fill="currentColor"/>
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <circle class="ti-core" cx="12" cy="12" r="3.5"/>
+                    <path class="ti-spark" d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>
                 </svg>
                 <span>AI Assistant</span>
+            </button>
+            <button class="mode-tab" data-mode="ovulation">
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <path class="ti-heart" d="M12 20.5l-1.3-1.2C6.3 15.4 3.5 12.8 3.5 9.7 3.5 7.2 5.5 5.2 8 5.2c1.5 0 2.9.7 3.8 1.8.9-1.1 2.3-1.8 3.8-1.8 2.5 0 4.5 2 4.5 4.5 0 3.1-2.8 5.7-7.2 9.6L12 20.5z"/>
+                </svg>
+                <span>Ovulation</span>
+            </button>
+            <button class="mode-tab" data-mode="loan">
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2"/>
+                    <circle class="ti-coin" cx="12" cy="12" r="2.5"/>
+                </svg>
+                <span>Loan</span>
+            </button>
+            <button class="mode-tab" data-mode="tax">
+                <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <circle class="ti-pct ti-pct-a" cx="9.5" cy="14" r="1" fill="currentColor"/>
+                    <circle class="ti-pct ti-pct-b" cx="14.5" cy="18" r="1" fill="currentColor"/>
+                    <line class="ti-slash" x1="15" y1="13" x2="9" y2="19"/>
+                </svg>
+                <span>Tax</span>
             </button>
         </div>
 
@@ -483,6 +504,543 @@
                     <button class="suggestion-chip" data-query="Square root of 144">√144</button>
                     <button class="suggestion-chip" data-query="Convert 100 fahrenheit to celsius">100°F → °C</button>
                     <button class="suggestion-chip" data-query="tip for 85 dollar bill at 18%">Tip calc</button>
+                    <button class="suggestion-chip" data-query="Calculate loan repayment for 500000 over 24 months at 18% annual interest">Loan repayment</button>
+                    <button class="suggestion-chip" data-query="Ovulation if my last period started May 5 and cycle is 28 days">Ovulation date</button>
+                    <button class="suggestion-chip" data-query="Estimate annual tax if I earn 800000 monthly in Nigeria">Tax estimate</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ovulation Mode -->
+        <section class="mode-content" id="ovulation-mode">
+            <div class="converter-wrapper">
+                <div class="converter-header">
+                    <h2>Ovulation Calculator</h2>
+                    <span class="module-pill">Health</span>
+                </div>
+
+                <p class="module-description">Estimate your ovulation date, fertile window, next period, and a monthly fertility calendar.</p>
+
+                <div class="converter-card form-card">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>First Day of Last Period</label>
+                            <input type="date" class="form-input" id="ovLastPeriod">
+                        </div>
+                        <div class="form-field">
+                            <label>Average Cycle Length (days)</label>
+                            <input type="number" class="form-input" id="ovCycleLength" value="28" min="21" max="45" step="1">
+                        </div>
+                        <div class="form-field">
+                            <label>Average Period Length (days)</label>
+                            <input type="number" class="form-input" id="ovPeriodLength" value="5" min="2" max="10" step="1">
+                        </div>
+                        <div class="form-field">
+                            <label>Luteal Phase (days)</label>
+                            <input type="number" class="form-input" id="ovLuteal" value="14" min="10" max="16" step="1">
+                        </div>
+                        <div class="form-field">
+                            <label>Months to Predict</label>
+                            <select class="form-input" id="ovMonths">
+                                <option value="1">1 month</option>
+                                <option value="2">2 months</option>
+                                <option value="3" selected>3 months</option>
+                                <option value="6">6 months</option>
+                                <option value="9">9 months</option>
+                                <option value="12">12 months</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Calendar Start</label>
+                            <select class="form-input" id="ovCalStart">
+                                <option value="0">Sunday</option>
+                                <option value="1" selected>Monday</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <details class="advanced-options">
+                        <summary>Advanced (Irregular Cycle Mode)</summary>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="ovIrregular"> Irregular cycle
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label>Shortest cycle (days)</label>
+                                <input type="number" class="form-input" id="ovShortest" value="26" min="21" max="45" disabled>
+                            </div>
+                            <div class="form-field">
+                                <label>Longest cycle (days)</label>
+                                <input type="number" class="form-input" id="ovLongest" value="32" min="21" max="45" disabled>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="form-actions">
+                        <button class="btn-primary" id="ovCalcBtn">Calculate</button>
+                        <button class="btn-secondary" id="ovResetBtn">Reset</button>
+                        <button class="btn-secondary" id="ovCopyBtn">Copy Summary</button>
+                        <button class="btn-secondary" id="ovSaveBtn">Save</button>
+                    </div>
+                </div>
+
+                <div class="result-section" id="ovResults" style="display:none;">
+                    <div class="result-grid">
+                        <div class="result-card result-card-primary">
+                            <span class="result-label">Ovulation Date</span>
+                            <span class="result-value" id="ovOvulationDate">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Fertile Window</span>
+                            <span class="result-value" id="ovFertileWindow">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Next Period</span>
+                            <span class="result-value" id="ovNextPeriod">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Highest Fertility</span>
+                            <span class="result-value" id="ovPeakDays">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Pregnancy Test Date</span>
+                            <span class="result-value" id="ovPregTest">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Cycle Summary</span>
+                            <span class="result-value" id="ovCycleSummary">—</span>
+                        </div>
+                    </div>
+
+                    <div class="calendar-section">
+                        <div class="section-header">
+                            <h3>Fertility Calendar</h3>
+                            <div class="calendar-legend">
+                                <span class="legend-item"><span class="legend-dot period"></span>Period</span>
+                                <span class="legend-item"><span class="legend-dot fertile"></span>Fertile</span>
+                                <span class="legend-item"><span class="legend-dot ovulation"></span>Ovulation</span>
+                                <span class="legend-item"><span class="legend-dot today"></span>Today</span>
+                            </div>
+                        </div>
+                        <div class="ovulation-calendar" id="ovCalendar"></div>
+                    </div>
+                </div>
+
+                <div class="disclaimer-card warning">
+                    <strong>⚠ Medical Disclaimer:</strong> This ovulation calculator provides estimates only and should not be used as medical advice, contraception, or pregnancy prevention guidance. Cycle dates may vary. Please consult a qualified healthcare professional for medical advice.
+                </div>
+
+                <div class="presets-section">
+                    <div class="section-header">
+                        <h3>Saved Cycles</h3>
+                    </div>
+                    <div class="presets-list" id="ovulationPresets"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loan Mode -->
+        <section class="mode-content" id="loan-mode">
+            <div class="converter-wrapper">
+                <div class="converter-header">
+                    <h2>Loan Calculator</h2>
+                    <span class="module-pill">Finance</span>
+                </div>
+
+                <p class="module-description">Calculate repayments, interest, payoff date, and amortization schedule for personal loans, mortgages, and asset finance.</p>
+
+                <div class="converter-card form-card">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Loan Amount</label>
+                            <input type="number" class="form-input" id="loanAmount" value="500000" min="0" step="any">
+                        </div>
+                        <div class="form-field">
+                            <label>Currency</label>
+                            <select class="form-input" id="loanCurrency"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>Interest Rate (%)</label>
+                            <input type="number" class="form-input" id="loanRate" value="15" min="0" step="any">
+                        </div>
+                        <div class="form-field">
+                            <label>Rate Type</label>
+                            <select class="form-input" id="loanRateType">
+                                <option value="annual" selected>Annual</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="daily">Daily</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Loan Term</label>
+                            <input type="number" class="form-input" id="loanTerm" value="24" min="1" step="1">
+                        </div>
+                        <div class="form-field">
+                            <label>Term Unit</label>
+                            <select class="form-input" id="loanTermUnit">
+                                <option value="days">Days</option>
+                                <option value="weeks">Weeks</option>
+                                <option value="months" selected>Months</option>
+                                <option value="years">Years</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Loan Type</label>
+                            <select class="form-input" id="loanType">
+                                <option value="amortized" selected>Amortized (Reducing Balance)</option>
+                                <option value="flat">Flat Interest</option>
+                                <option value="interest-only">Interest Only</option>
+                                <option value="balloon">Balloon Payment</option>
+                                <option value="simple">Simple Interest</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Payment Frequency</label>
+                            <select class="form-input" id="loanFreq">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="biweekly">Bi-weekly</option>
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="semiannually">Semi-annually</option>
+                                <option value="annually">Annually</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Loan Start Date</label>
+                            <input type="date" class="form-input" id="loanStartDate">
+                        </div>
+                        <div class="form-field">
+                            <label>First Repayment Date</label>
+                            <input type="date" class="form-input" id="loanFirstPayment">
+                        </div>
+                    </div>
+
+                    <details class="advanced-options">
+                        <summary>Advanced (Fees, Extra Payments, Balloon)</summary>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Down Payment</label>
+                                <input type="number" class="form-input" id="loanDown" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Processing Fee</label>
+                                <input type="number" class="form-input" id="loanProcFee" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Insurance Fee</label>
+                                <input type="number" class="form-input" id="loanInsurance" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Extra Payment / Period</label>
+                                <input type="number" class="form-input" id="loanExtra" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Balloon Payment</label>
+                                <input type="number" class="form-input" id="loanBalloon" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Grace Period (months)</label>
+                                <input type="number" class="form-input" id="loanGrace" value="0" min="0" step="1">
+                            </div>
+                            <div class="form-field">
+                                <label>Compounding Frequency</label>
+                                <select class="form-input" id="loanCompound">
+                                    <option value="daily">Daily</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="annually">Annually</option>
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="form-actions">
+                        <button class="btn-primary" id="loanCalcBtn">Calculate</button>
+                        <button class="btn-secondary" id="loanResetBtn">Reset</button>
+                        <button class="btn-secondary" id="loanCopyBtn">Copy Summary</button>
+                        <button class="btn-secondary" id="loanExportBtn">Export CSV</button>
+                        <button class="btn-secondary" id="loanSaveBtn">Save</button>
+                    </div>
+                </div>
+
+                <div class="result-section" id="loanResults" style="display:none;">
+                    <div class="result-grid">
+                        <div class="result-card result-card-primary">
+                            <span class="result-label">Repayment Amount</span>
+                            <span class="result-value" id="loanRepayment">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Total Interest</span>
+                            <span class="result-value" id="loanTotalInterest">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Total Repayment</span>
+                            <span class="result-value" id="loanTotalRepayment">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Total Fees</span>
+                            <span class="result-value" id="loanFees">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Final Loan Cost</span>
+                            <span class="result-value" id="loanFinalCost">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Payoff Date</span>
+                            <span class="result-value" id="loanPayoffDate">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Number of Payments</span>
+                            <span class="result-value" id="loanPaymentCount">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Effective Annual Rate</span>
+                            <span class="result-value" id="loanEAR">—</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="chart-grid">
+                            <div class="chart-card">
+                                <h3>Principal vs Interest</h3>
+                                <div class="donut-chart" id="loanDonut"></div>
+                            </div>
+                            <div class="chart-card">
+                                <h3>Balance Over Time</h3>
+                                <div class="line-chart" id="loanLineChart"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="schedule-section">
+                        <div class="section-header">
+                            <h3>Amortization Schedule</h3>
+                            <button class="btn-primary-small" id="loanScheduleToggle">Show/Hide</button>
+                        </div>
+                        <div class="schedule-table-wrapper" id="loanScheduleWrap">
+                            <table class="schedule-table" id="loanScheduleTable"></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="presets-section">
+                    <div class="section-header">
+                        <h3>Saved Loans</h3>
+                    </div>
+                    <div class="presets-list" id="loanPresets"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tax Mode -->
+        <section class="mode-content" id="tax-mode">
+            <div class="converter-wrapper">
+                <div class="converter-header">
+                    <h2>Tax Calculator</h2>
+                    <span class="module-pill">Finance</span>
+                </div>
+
+                <p class="module-description">Estimate personal income tax, salary tax, business tax, and net pay using configurable presets or custom brackets.</p>
+
+                <div class="converter-card form-card">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Country / Region</label>
+                            <select class="form-input" id="taxCountry"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>Tax Year</label>
+                            <input type="number" class="form-input" id="taxYear" value="2026" min="2000" max="2100" step="1">
+                        </div>
+                        <div class="form-field">
+                            <label>Currency</label>
+                            <select class="form-input" id="taxCurrency"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>Income Type</label>
+                            <select class="form-input" id="taxIncomeType">
+                                <option value="salary" selected>Salary</option>
+                                <option value="business">Business</option>
+                                <option value="freelance">Freelance</option>
+                                <option value="investment">Investment</option>
+                                <option value="rental">Rental</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Gross Income</label>
+                            <input type="number" class="form-input" id="taxIncome" value="800000" min="0" step="any">
+                        </div>
+                        <div class="form-field">
+                            <label>Income Period</label>
+                            <select class="form-input" id="taxPeriod">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Filing Status</label>
+                            <select class="form-input" id="taxStatus">
+                                <option value="single" selected>Single</option>
+                                <option value="married">Married</option>
+                                <option value="head">Head of Household</option>
+                                <option value="company">Company / Business</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Start Month</label>
+                            <select class="form-input" id="taxStartMonth"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>Start Day</label>
+                            <select class="form-input" id="taxStartDay"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>End Month</label>
+                            <select class="form-input" id="taxEndMonth"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>End Day</label>
+                            <select class="form-input" id="taxEndDay"></select>
+                        </div>
+                    </div>
+
+                    <details class="advanced-options">
+                        <summary>Deductions, Reliefs & Credits</summary>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Pension Contribution</label>
+                                <input type="number" class="form-input" id="taxPension" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Insurance / NHF</label>
+                                <input type="number" class="form-input" id="taxInsurance" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Tax Reliefs</label>
+                                <input type="number" class="form-input" id="taxReliefs" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Other Deductions</label>
+                                <input type="number" class="form-input" id="taxDeductions" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Allowances</label>
+                                <input type="number" class="form-input" id="taxAllowances" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Tax Credits</label>
+                                <input type="number" class="form-input" id="taxCredits" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>PAYE Already Paid</label>
+                                <input type="number" class="form-input" id="taxPayePaid" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>Withholding Tax Paid</label>
+                                <input type="number" class="form-input" id="taxWhtPaid" value="0" min="0" step="any">
+                            </div>
+                            <div class="form-field">
+                                <label>VAT Rate (%) [optional]</label>
+                                <input type="number" class="form-input" id="taxVat" value="0" min="0" max="100" step="any">
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="advanced-options">
+                        <summary>Custom Tax Brackets (editable)</summary>
+                        <p class="muted-note">Edit the brackets below. Tax laws change — verify with your local tax authority.</p>
+                        <div class="brackets-editor" id="taxBracketsEditor"></div>
+                        <button class="btn-secondary" id="taxAddBracket">+ Add Bracket</button>
+                    </details>
+
+                    <div class="form-actions">
+                        <button class="btn-primary" id="taxCalcBtn">Calculate</button>
+                        <button class="btn-secondary" id="taxResetBtn">Reset</button>
+                        <button class="btn-secondary" id="taxCopyBtn">Copy Summary</button>
+                        <button class="btn-secondary" id="taxExportBtn">Export CSV</button>
+                        <button class="btn-secondary" id="taxSaveBtn">Save</button>
+                    </div>
+                </div>
+
+                <div class="result-section" id="taxResults" style="display:none;">
+                    <div class="result-grid">
+                        <div class="result-card result-card-primary">
+                            <span class="result-label">Estimated Tax Payable</span>
+                            <span class="result-value" id="taxPayable">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Gross Income (Yearly)</span>
+                            <span class="result-value" id="taxGross">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Total Deductions</span>
+                            <span class="result-value" id="taxDedTotal">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Taxable Income</span>
+                            <span class="result-value" id="taxTaxable">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Net Income</span>
+                            <span class="result-value" id="taxNet">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Effective Tax Rate</span>
+                            <span class="result-value" id="taxEffRate">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Marginal Tax Rate</span>
+                            <span class="result-value" id="taxMargRate">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Monthly Net</span>
+                            <span class="result-value" id="taxMonthlyNet">—</span>
+                        </div>
+                        <div class="result-card">
+                            <span class="result-label">Daily Tax</span>
+                            <span class="result-value" id="taxDaily">—</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="chart-grid">
+                            <div class="chart-card">
+                                <h3>Income vs Tax</h3>
+                                <div class="donut-chart" id="taxDonut"></div>
+                            </div>
+                            <div class="chart-card">
+                                <h3>Tax Bracket Breakdown</h3>
+                                <div class="bar-chart" id="taxBarChart"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="schedule-section">
+                        <div class="section-header">
+                            <h3>Bracket Breakdown</h3>
+                        </div>
+                        <div class="schedule-table-wrapper">
+                            <table class="schedule-table" id="taxBreakdownTable"></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disclaimer-card warning">
+                    <strong>⚠ Tax Disclaimer:</strong> This tax calculator provides estimates only and does not constitute financial, accounting, or legal tax advice. Tax laws vary by country and may change. Please consult a certified tax professional or relevant tax authority before making financial decisions.
+                </div>
+
+                <div class="presets-section">
+                    <div class="section-header">
+                        <h3>Saved Tax Estimates</h3>
+                    </div>
+                    <div class="presets-list" id="taxPresets"></div>
                 </div>
             </div>
         </section>
@@ -701,7 +1259,7 @@
                         </a>
                     </div>
                     <div class="app-version">
-                        <span>Nexus Calculator v1.0.0</span>
+                        <span>Nexus Calculator v2.0.0</span>
                         <span class="version-dot">•</span>
                         <span>© 2026 Collins Tochukwu Anyanwu</span>
                     </div>

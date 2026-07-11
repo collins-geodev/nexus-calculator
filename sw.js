@@ -1,5 +1,5 @@
 /* Nexus Calculator - Service Worker */
-const CACHE_VERSION = 'nexus-v1';
+const CACHE_VERSION = 'nexus-v2';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 

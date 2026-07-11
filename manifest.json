@@ -1,7 +1,8 @@
 {
   "name": "Nexus Calculator — Smart AI Calculator",
   "short_name": "Nexus Calc",
-  "description": "Smart AI-powered calculator with currency converter, metric converter, voice commands, and 10 customizable themes",
+  "version": "2.0.0",
+  "description": "Smart AI-powered all-in-one calculator: standard, scientific, programmer, currency, metric, ovulation, loan, tax, and AI assistant",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -51,6 +52,27 @@
       "short_name": "AI",
       "description": "AI math helper",
       "url": "/?mode=ai",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ovulation Calculator",
+      "short_name": "Ovulation",
+      "description": "Estimate ovulation, fertile window, and period dates",
+      "url": "/?mode=ovulation",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Loan Calculator",
+      "short_name": "Loan",
+      "description": "Repayments, interest, amortization schedule",
+      "url": "/?mode=loan",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tax Calculator",
+      "short_name": "Tax",
+      "description": "Estimate income tax with configurable brackets",
+      "url": "/?mode=tax",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
