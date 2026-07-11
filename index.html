@@ -19,8 +19,19 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         if ('serviceWorker' in navigator) {
+            // Auto-reload once when an updated worker takes control, so new
+            // deploys apply without a manual hard-refresh (incl. the TWA app).
+            let swRefreshing = false;
+            const hadController = !!navigator.serviceWorker.controller;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (swRefreshing || !hadController) return; // skip on first install
+                swRefreshing = true;
+                window.location.reload();
+            });
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => { reg.update(); })
+                    .catch(err => console.log('SW registration failed:', err));
             });
         }
     </script>
