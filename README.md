@@ -1,6 +1,6 @@
 # 🧮 Nexus Calculator
 
-> A next-generation, AI-powered smart calculator with currency conversion, metric conversion, voice commands, and 10 customizable themes — all in a single-page web app.
+> A next-generation, AI-powered smart calculator with currency & metric conversion, loan / tax / ovulation calculators, voice commands, and 10 customizable themes — all in a single-page web app.
 
 **🔗 Live Demo:** [nexus-calculator-ten.vercel.app](https://nexus-calculator-ten.vercel.app)
 
@@ -40,6 +40,33 @@
 | Power | W, kW, MW, GW, hp, metric hp, BTU/hr, ft-lb/s |
 | Fuel Economy | MPG (US/UK), km/L, L/100km |
 | Cooking | tsp, tbsp, cup, pint, quart, ml, l, fl oz, dash, pinch |
+
+### 💰 Loan Calculator
+Repayments, interest, payoff date, and a full amortization schedule for personal loans, mortgages, and asset finance.
+- **5 loan types** — Amortized (reducing balance), Flat interest, Interest-only, Balloon, Simple interest
+- **7 payment frequencies** — daily, weekly, bi-weekly, monthly, quarterly, semi-annually, annually
+- **Any currency**, configurable rate type, and term in months or years
+- **Extra inputs** — down payment, processing fee, insurance, extra payment per period, balloon amount, grace period, compounding
+- **Results** — repayment amount, total interest, total repayment, total fees, final loan cost, payoff date, number of payments, effective annual rate (EAR)
+- **Visuals** — principal-vs-interest donut, balance-over-time line chart, and a full amortization table
+- Copy summary, export to CSV, and save loans for later
+
+### 🧾 Tax Calculator
+Estimate personal income tax, salary tax, business tax, and net (take-home) pay.
+- **Country presets** or fully **editable custom tax brackets**
+- Income type, gross income, income period, tax year, and filing status
+- **Deductions, reliefs & credits** — pension, insurance, tax reliefs, other deductions, allowances, tax credits
+- Factor in **PAYE** and **withholding tax** already paid, plus optional **VAT**
+- Copy summary, export to CSV, and save scenarios
+- ⚠️ Estimates only — tax laws change; verify with your local tax authority
+
+### 🩺 Ovulation & Fertility Calculator
+Estimate your ovulation date, fertile window, next period, and a monthly fertility calendar.
+- **Inputs** — first day of last period, average cycle length, average period length, luteal phase
+- **Results** — ovulation date, fertile window, next period
+- **Visual monthly calendar** color-coding period, fertile, and ovulation days
+- Save cycle presets for quick recall
+- ⚠️ **Medical disclaimer** — estimates only; not medical advice or a method of contraception
 
 ### 🤖 AI Math Assistant
 Natural-language math, conversions, and explanations:
@@ -210,6 +237,15 @@ Standard, Scientific, and Programmer calculators in a unified interface with 3-m
 
 ### Metric Converter
 15 categories with 150+ units. All-conversions grid shows the input value in every other unit simultaneously.
+
+### Loan Calculator
+Full loan breakdown — repayment, interest, and EAR — with a principal-vs-interest donut, balance-over-time chart, and amortization schedule.
+
+### Tax Calculator
+Income-tax estimate using country presets or custom brackets, with deductions/reliefs/credits and a net-pay breakdown.
+
+### Ovulation Calculator
+Ovulation date, fertile window, and next period with a color-coded monthly fertility calendar.
 
 ### AI Assistant
 Chat-like interface accepting natural language queries with 8 quick-suggestion chips.
