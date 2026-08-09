@@ -104,17 +104,48 @@ Then edit `Path` and add:
 
 Verify: `adb --version` and `java -version` should both work.
 
+### First-time setup: add the Android platform & generate the app icon
+
+From the project root, run these once:
+
+```bash
+# 1. Build the web assets into www/
+npm run build:www
+
+# 2. Create the native Android project (only needed once)
+npx cap add android
+
+# 3. Generate the native launcher icon (your ∑ logo) + splash into the project
+npm run assets
+```
+
+> ⚠️ **Why step 3 matters — this is what makes your logo show on the phone.**
+> Capacitor scaffolds `android/` with a **placeholder** launcher icon. Your ∑ logo
+> in `icon.svg` and `icons/*.png` is only used by the **web/PWA layer**
+> (`manifest.json`) — it is **NOT** the icon Android draws on the home screen.
+> `npm run assets` reads the source images in `assets/` (`icon-only.png`,
+> `icon-foreground.png`, `icon-background.png`) and writes the real launcher icons —
+> including Android 8+ **adaptive icons** — into `android/app/src/main/res/mipmap-*`.
+> **If you skip this step, the app installs with the generic default icon.**
+>
+> Changed the logo? Regenerate the source images first with `npm run assets:source`,
+> then re-run `npm run assets`.
+
 ### Build the APK
 
 From the project root:
 
 ```bash
-# 1. Sync web files to Android project
+# 1. Sync web files to Android project (this now also regenerates the icons)
 npm run cap:sync
 
 # 2. Build debug APK (unsigned, for testing)
 npm run build:apk:debug
 ```
+
+`npm run cap:sync` runs `npm run assets` at the end, so every build refreshes the
+native launcher icon automatically — you don't have to remember it after the
+one-time setup above.
 
 Your APK will be at:
 ```
@@ -202,6 +233,57 @@ bubblewrap build
 ```
 
 Requires Android SDK + JDK 17 (same as Capacitor).
+
+> **Icon note (PWA Builder & Bubblewrap):** these methods build a TWA and take the
+> launcher icon from your **`manifest.json`** — specifically the `512x512` entry with
+> `"purpose": "maskable"` (`icons/icon-maskable-512.png`). That entry is already in
+> the manifest, so make sure your deployed site is serving the latest
+> `manifest.json` and icons before you package, then hard-refresh PWA Builder.
+
+---
+
+## Troubleshooting: the app icon shows a default / blank logo
+
+**Symptom:** After installing from the Play Store (or sideloading), the home-screen
+icon is the generic Capacitor/Android default instead of your ∑ logo.
+
+**Cause:** On Android the launcher icon is a **native resource**
+(`android/app/src/main/res/mipmap-*/ic_launcher*.png` + the adaptive-icon XML in
+`mipmap-anydpi-v26/`). It is **not** taken from `icon.svg`, the `icons/` folder, or
+`manifest.json` when you build with Capacitor. A freshly-scaffolded `android/` project
+ships with a placeholder icon, so if you never generated real icons, that placeholder
+is what gets published.
+
+**Fix (Capacitor builds):**
+
+```bash
+# from the project root
+npm run assets:source   # (re)build the source images in ./assets  — only if you changed the logo
+npm run assets          # write native launcher icons into android/app/src/main/res/mipmap-*
+npm run cap:sync        # sync (also re-runs `npm run assets`)
+```
+
+Then rebuild and re-publish:
+
+```bash
+npm run build:bundle    # produces a new app-release.aab to upload to Play Console
+```
+
+Verify before publishing — you should see non-placeholder files here:
+
+```
+android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+```
+
+> **Play Store caching:** after you upload a new build with the correct icon, the new
+> icon appears once the release is reviewed and rolled out. On a device that already
+> has the old build, uninstall and reinstall (or clear the launcher cache) to force the
+> new icon to show.
+
+**Fix (PWA Builder / Bubblewrap builds):** confirm `manifest.json` on your live URL
+includes the `maskable` 512×512 icon (it does), re-package, and upload the new build.
 
 ---
 
