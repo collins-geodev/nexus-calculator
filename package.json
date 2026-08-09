@@ -6,14 +6,17 @@
   "license": "MIT",
   "scripts": {
     "icons": "node generate-icons.js",
+    "assets:source": "node generate-app-assets.js",
+    "assets": "capacitor-assets generate --android",
     "build:www": "node build-www.js",
-    "cap:sync": "npm run build:www && cap sync android",
+    "cap:sync": "npm run build:www && cap sync android && npm run assets",
     "cap:open:android": "cap open android",
     "build:apk:debug": "npm run cap:sync && cd android && gradlew assembleDebug",
     "build:apk:release": "npm run cap:sync && cd android && gradlew assembleRelease",
     "build:bundle": "npm run cap:sync && cd android && gradlew bundleRelease"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "sharp": "^0.34.5"
   },
   "dependencies": {
