@@ -2097,24 +2097,29 @@ const AI = {
 
     async askGemini(prompt) {
         if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
-        try {
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 20000);
-            const res = await fetch(this.aiEndpoint(), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt }),
-                signal: ctrl.signal
-            });
-            clearTimeout(timer);
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data && typeof data.text === 'string' && data.text.trim()
-                ? data.text.trim()
-                : null;
-        } catch (e) {
-            return null;
+        // Gemini intermittently answers 503 (model overloaded); one quiet
+        // retry after a short pause rescues most of those.
+        for (let attempt = 0; attempt < 2; attempt++) {
+            if (attempt > 0) await new Promise(r => setTimeout(r, 2500));
+            try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 20000);
+                const res = await fetch(this.aiEndpoint(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt }),
+                    signal: ctrl.signal
+                });
+                clearTimeout(timer);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && typeof data.text === 'string' && data.text.trim()) {
+                        return data.text.trim();
+                    }
+                }
+            } catch (e) { /* retry or give up below */ }
         }
+        return null;
     },
 
     // Queries whose answer has meaningful working behind it — equations,
@@ -2130,6 +2135,10 @@ const AI = {
         if (text) {
             this.addMessage('bot',
                 `${this.escapeForChat(text)}<div class="ai-source">✦ Steps by Gemini</div>`);
+        } else if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+            // Never fail silently: say why the steps didn't come.
+            this.addMessage('bot',
+                `<div class="ai-source">✦ Gemini couldn't fetch the steps just now (AI busy) — ask again in a moment.</div>`);
         }
     },
 
