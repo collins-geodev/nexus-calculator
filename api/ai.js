@@ -29,14 +29,24 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(204).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
     const key = process.env.GEMINI_API_KEY;
-    if (!key) return res.status(503).json({ error: 'AI is not configured' });
 
-    const prompt =
-        req.body && typeof req.body.prompt === 'string' ? req.body.prompt.trim() : '';
-    if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+    let prompt = '';
+    if (req.method === 'POST') {
+        prompt = req.body && typeof req.body.prompt === 'string' ? req.body.prompt.trim() : '';
+        if (!key) return res.status(503).json({ error: 'AI is not configured' });
+        if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+    } else if (req.method === 'GET') {
+        // Health check / self-test: GET /api/ai reports configuration state;
+        // GET /api/ai?q=... answers like a POST (used for diagnostics).
+        prompt = req.query && typeof req.query.q === 'string' ? req.query.q.trim() : '';
+        if (!prompt) return res.status(200).json({ ok: true, configured: Boolean(key) });
+        if (!key) return res.status(503).json({ error: 'AI is not configured' });
+    } else {
+        return res.status(405).json({ error: 'POST only' });
+    }
+
     if (prompt.length > 2000) return res.status(413).json({ error: 'Prompt too long' });
 
     try {
