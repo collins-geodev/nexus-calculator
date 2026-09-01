@@ -3,7 +3,7 @@
    deploys always show up when online; cache-first for images/fonts
    (rarely change); cache is the offline fallback. Bump CACHE_VERSION
    whenever you want to force-clear all previously cached assets. */
-const CACHE_VERSION = 'nexus-v3';
+const CACHE_VERSION = 'nexus-v4';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
@@ -49,6 +49,10 @@ self.addEventListener('fetch', (event) => {
 
     // Never intercept the live exchange-rate API — always fetch fresh.
     if (url.hostname.includes('er-api.com') || url.hostname.includes('exchangerate')) return;
+
+    // Never intercept the AI endpoint (POST already passes through; this
+    // guards any GET/preflight variants too).
+    if (url.pathname.startsWith('/api/')) return;
 
     const sameOrigin = url.origin === self.location.origin;
     // App shell = navigations + our own HTML/CSS/JS/JSON. These must stay fresh.
