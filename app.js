@@ -1622,13 +1622,20 @@ const AI = {
         await new Promise(r => setTimeout(r, 600));
 
         const response = this.analyze(query);
-        if (!response.unhandled) {
+        // "Show the steps / working / explain" deserves a worked answer, which
+        // the local engine can't produce — prefer Gemini for those even when
+        // the local engine knows the final number.
+        const wantsSteps =
+            /\b(steps?|workings?|show\s+(?:your\s+)?work|explain|walk\s*(?:me\s*)?through)\b/i.test(query);
+
+        if (!response.unhandled && !wantsSteps) {
             this.hideTyping();
             this.addMessage('bot', response.message, response.result);
             return;
         }
 
-        // Local engine couldn't parse it — ask Gemini, keep typing dots up.
+        // Ask Gemini, keep typing dots up. Falls back to the local response
+        // (real answer for handled queries, help text otherwise) on failure.
         const aiText = await this.askGemini(query);
         this.hideTyping();
         if (aiText) {
