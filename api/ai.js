@@ -119,12 +119,21 @@ module.exports = async (req, res) => {
         for (const m of candidates) {
             r = await generate(key, m, prompt, true);
             if (r.status === 400) r = await generate(key, m, prompt, false);
-            if (r.status !== 404) { used = m; break; }
+            used = m;
+            // 404 = model gone; 429/503 = that model throttled/overloaded —
+            // in all three cases the next candidate may still work.
+            if (r.status !== 404 && r.status !== 429 && r.status !== 503) break;
         }
         if (!r || !r.ok) {
-            return res.status(502).json({ error: `Gemini error ${r ? r.status : 'network'}` });
+            let detail = '';
+            try { detail = (await r.text()).slice(0, 300); } catch (e) { /* ignore */ }
+            return res.status(502).json({
+                error: `Gemini error ${r ? r.status : 'network'}`,
+                model: used,
+                detail,
+            });
         }
-        if (r.ok && used) resolvedModel = used;
+        resolvedModel = used;
 
         const data = await r.json();
         const text =
