@@ -1,7 +1,12 @@
 /* Vercel serverless function: proxies AI Assistant questions to Google's
  * Gemini API. The GEMINI_API_KEY lives in a Vercel environment variable and
  * never reaches the browser — the static app calls this endpoint instead of
- * Gemini directly, so the key cannot be read out of the client bundle. */
+ * Gemini directly, so the key cannot be read out of the client bundle.
+ *
+ * The model is not hard-coded: Google renames/retires Gemini models, so the
+ * function asks the ListModels endpoint for what this key can use and picks
+ * the newest plain "flash" model (cached per warm lambda), with static
+ * fallbacks if discovery fails. */
 
 const ALLOWED_ORIGINS = [
     'https://nexus-calculator-ten.vercel.app',
@@ -15,9 +20,60 @@ const ALLOWED_ORIGINS = [
 const SYSTEM_PROMPT =
     'You are the Nexus AI Assistant inside the Nexus Calculator app, built by ' +
     'Collins Tochukwu Anyanwu. Answer math, statistics, conversion, finance and ' +
-    'everyday calculation questions. Be concise (a few sentences), state the ' +
-    'final answer clearly, and reply in plain text — no markdown headings, ' +
-    'lists or tables.';
+    'everyday calculation questions. Be concise and state the final answer ' +
+    'clearly. When the user asks for steps, working or an explanation, show ' +
+    'short numbered steps first, then the final answer. Reply in plain text — ' +
+    'no markdown headings, lists with dashes, or tables (numbered steps and ' +
+    '**bold** are fine).';
+
+const MODEL_FALLBACKS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+let resolvedModel = null; // cached while the lambda stays warm
+
+async function resolveModel(key) {
+    if (resolvedModel) return resolvedModel;
+    try {
+        const r = await fetch(
+            'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
+            { headers: { 'x-goog-api-key': key } }
+        );
+        if (r.ok) {
+            const data = await r.json();
+            const usable = (data.models || [])
+                .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+                .map((m) => (m.name || '').replace(/^models\//, ''));
+            if (usable.includes('gemini-flash-latest')) return (resolvedModel = 'gemini-flash-latest');
+            const flashes = usable
+                .filter((n) => /^gemini-[\d.]+-flash$/.test(n))
+                .sort((a, b) =>
+                    parseFloat(b.match(/^gemini-([\d.]+)/)[1]) - parseFloat(a.match(/^gemini-([\d.]+)/)[1]));
+            if (flashes[0]) return (resolvedModel = flashes[0]);
+            const anyFlash = usable.find(
+                (n) => n.includes('flash') && !/(lite|preview|exp|image|tts|live|8b)/.test(n));
+            if (anyFlash) return (resolvedModel = anyFlash);
+            if (usable[0]) return (resolvedModel = usable[0]);
+        }
+    } catch (e) { /* discovery failed — use fallbacks */ }
+    return MODEL_FALLBACKS[0];
+}
+
+function generate(key, model, prompt, thinkingOff) {
+    const body = {
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
+    };
+    // Calculator questions don't need extended thinking; models that don't
+    // support the field get a retry without it (400 handling below).
+    if (thinkingOff) body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    return fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+            body: JSON.stringify(body),
+        }
+    );
+}
 
 module.exports = async (req, res) => {
     const origin = req.headers.origin || '';
@@ -41,7 +97,13 @@ module.exports = async (req, res) => {
         // Health check / self-test: GET /api/ai reports configuration state;
         // GET /api/ai?q=... answers like a POST (used for diagnostics).
         prompt = req.query && typeof req.query.q === 'string' ? req.query.q.trim() : '';
-        if (!prompt) return res.status(200).json({ ok: true, configured: Boolean(key) });
+        if (!prompt) {
+            return res.status(200).json({
+                ok: true,
+                configured: Boolean(key),
+                model: resolvedModel || null,
+            });
+        }
         if (!key) return res.status(503).json({ error: 'AI is not configured' });
     } else {
         return res.status(405).json({ error: 'POST only' });
@@ -50,25 +112,19 @@ module.exports = async (req, res) => {
     if (prompt.length > 2000) return res.status(413).json({ error: 'Prompt too long' });
 
     try {
-        const r = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-                body: JSON.stringify({
-                    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.3,
-                        maxOutputTokens: 800,
-                        // Calculator questions don't need extended thinking;
-                        // disabling it keeps answers fast and cheap.
-                        thinkingConfig: { thinkingBudget: 0 },
-                    },
-                }),
-            }
-        );
-        if (!r.ok) return res.status(502).json({ error: `Gemini error ${r.status}` });
+        const first = await resolveModel(key);
+        const candidates = [first, ...MODEL_FALLBACKS.filter((m) => m !== first)];
+        let r = null;
+        let used = null;
+        for (const m of candidates) {
+            r = await generate(key, m, prompt, true);
+            if (r.status === 400) r = await generate(key, m, prompt, false);
+            if (r.status !== 404) { used = m; break; }
+        }
+        if (!r || !r.ok) {
+            return res.status(502).json({ error: `Gemini error ${r ? r.status : 'network'}` });
+        }
+        if (r.ok && used) resolvedModel = used;
 
         const data = await r.json();
         const text =
@@ -79,7 +135,7 @@ module.exports = async (req, res) => {
                 data.candidates[0].content.parts.map((p) => p.text || '').join('')) ||
             '';
         if (!text.trim()) return res.status(502).json({ error: 'Empty answer' });
-        return res.status(200).json({ text: text.trim() });
+        return res.status(200).json({ text: text.trim(), model: used });
     } catch (e) {
         return res.status(502).json({ error: 'Upstream failure' });
     }
