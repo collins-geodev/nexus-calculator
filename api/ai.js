@@ -21,7 +21,7 @@ const SYSTEM_PROMPT =
     'no markdown headings, lists with dashes, or tables (numbered steps and ' +
     '**bold** are fine).';
 
-const MODEL_FALLBACKS = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
+const MODEL_FALLBACKS = ['gemini-3.6-flash', 'gemini-flash-latest'];
 let resolvedModel = null; // cached while the lambda stays warm
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -71,22 +71,26 @@ function generate(key, model, prompt, thinkingOff) {
     );
 }
 
-// Try one model with a couple of quick retries for transient overload.
-async function tryModel(key, model, prompt) {
+// Try one model, retrying transient overload (429/503) with backoff. The
+// recommended flash model is frequently 503 on the free tier, so we retry it
+// several times rather than falling through to models that may be retired.
+async function tryModel(key, model, prompt, attempts) {
+    const backoff = [500, 1200, 2500];
     let last = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let i = 0; i < attempts; i++) {
         let r = await generate(key, model, prompt, true);
         if (r.status === 400) r = await generate(key, model, prompt, false);
-        if (r.ok) return { ok: true, r };
+        if (r.ok) return { ok: true, r, status: 200 };
         last = r;
-        if (r.status === 404) break;                    // model gone → caller advances
-        if (r.status === 429 || r.status === 503) {     // overloaded → brief backoff, retry
-            if (attempt === 0) await sleep(600);
+        if (r.status === 429 || r.status === 503) {     // overloaded → backoff, retry same model
+            if (i < attempts - 1) await sleep(backoff[Math.min(i, backoff.length - 1)]);
             continue;
         }
-        break;                                          // other error → caller advances
+        break;                                          // 404/other → stop retrying this model
     }
-    return { ok: false, r: last };
+    let detail = '';
+    if (last) { try { detail = (await last.text()).slice(0, 300); } catch (e) { /* ignore */ } }
+    return { ok: false, r: last, status: last ? last.status : null, detail };
 }
 
 async function askGemini(key, prompt) {
@@ -94,33 +98,32 @@ async function askGemini(key, prompt) {
     if (resolvedModel) order.push(resolvedModel);
     for (const m of MODEL_FALLBACKS) if (!order.includes(m)) order.push(m);
 
-    let lastStatus = null;
+    const attempts = [];      // per-model {model, status} for diagnostics
     let lastDetail = '';
-    let all404 = true;
+    let sawOverload = false;
 
     for (const model of order) {
-        const out = await tryModel(key, model, prompt);
+        // Retry the first (recommended) model hardest; probe others once.
+        const out = await tryModel(key, model, prompt, model === order[0] ? 3 : 1);
+        attempts.push({ model, status: out.status });
         if (out.ok) { resolvedModel = model; return { ok: true, r: out.r, model }; }
-        const r = out.r;
-        lastStatus = r ? r.status : null;
-        if (r && r.status !== 404) all404 = false;
-        if (r) { try { lastDetail = (await r.text()).slice(0, 300); } catch (e) { /* ignore */ } }
+        if (out.status === 429 || out.status === 503) sawOverload = true;
+        if (out.detail) lastDetail = out.detail;
     }
 
-    // Every known model 404'd — they were likely all renamed. Discover once.
-    if (all404) {
+    // Nothing worked. If it wasn't just overload, the names may be stale —
+    // discover the key's real model and try it once.
+    if (!sawOverload) {
         const discovered = await discoverModel(key);
         if (discovered && !order.includes(discovered)) {
-            const out = await tryModel(key, discovered, prompt);
+            const out = await tryModel(key, discovered, prompt, 2);
+            attempts.push({ model: discovered, status: out.status });
             if (out.ok) { resolvedModel = discovered; return { ok: true, r: out.r, model: discovered }; }
-            if (out.r) {
-                lastStatus = out.r.status;
-                try { lastDetail = (await out.r.text()).slice(0, 300); } catch (e) { /* ignore */ }
-            }
+            if (out.detail) lastDetail = out.detail;
         }
     }
 
-    return { ok: false, status: lastStatus, detail: lastDetail, model: order[order.length - 1] };
+    return { ok: false, attempts, detail: lastDetail, overloaded: sawOverload };
 }
 
 module.exports = async (req, res) => {
@@ -156,9 +159,12 @@ module.exports = async (req, res) => {
     try {
         const out = await askGemini(key, prompt);
         if (!out.ok) {
-            return res.status(502).json({
-                error: `Gemini error ${out.status || 'network'}`,
-                model: out.model,
+            const status = out.overloaded ? 503 : 502;
+            return res.status(status).json({
+                error: out.overloaded
+                    ? 'Gemini is busy right now — please try again in a moment.'
+                    : 'Gemini could not answer.',
+                attempts: out.attempts,
                 detail: out.detail,
             });
         }
