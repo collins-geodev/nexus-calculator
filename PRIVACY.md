@@ -28,6 +28,9 @@ The app uses your device's `localStorage` to save:
 ### Live exchange rates (optional)
 When you enable "Live Exchange Rates" in settings, the app fetches data anonymously from [open.er-api.com](https://www.exchangerate-api.com). The request contains no personal data — only a simple HTTPS GET for current rates. Disabling live rates disables this network request.
 
+### AI Assistant (Google Gemini)
+Most AI Assistant questions are answered by the app's built-in engine, on your device, offline. When a question is beyond the built-in engine and you are online, the text of that question (and nothing else — no name, account, or device identifiers beyond a standard web request) is sent over HTTPS to our server, which forwards it to Google's Gemini API to generate the answer. Questions are not stored by us. Google processes them per the [Google Privacy Policy](https://policies.google.com/privacy). Offline, the AI Assistant works entirely on-device.
+
 ### Voice recognition
 Voice commands use your device's built-in Speech Recognition API (provided by Google on Android, Apple on iOS, Microsoft on Windows). Audio is processed by your device's operating system, not by us. We never receive, store, or listen to your voice.
 

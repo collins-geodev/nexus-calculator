@@ -1620,10 +1620,23 @@ const AI = {
         this.showTyping();
 
         await new Promise(r => setTimeout(r, 600));
-        this.hideTyping();
 
         const response = this.analyze(query);
-        this.addMessage('bot', response.message, response.result);
+        if (!response.unhandled) {
+            this.hideTyping();
+            this.addMessage('bot', response.message, response.result);
+            return;
+        }
+
+        // Local engine couldn't parse it — ask Gemini, keep typing dots up.
+        const aiText = await this.askGemini(query);
+        this.hideTyping();
+        if (aiText) {
+            this.addMessage('bot',
+                `${this.escapeForChat(aiText)}<div class="ai-source">✦ Answered by Gemini</div>`);
+        } else {
+            this.addMessage('bot', response.message, response.result);
+        }
     },
 
     analyze(query) {
@@ -2042,6 +2055,7 @@ const AI = {
         }
 
         return {
+            unhandled: true,
             message: `I can solve <strong>complex math</strong> and <strong>everyday problems</strong>. Try:<br>
                 <ul>
                     <li><em>Math:</em> "solve x^2 - 5x + 6 = 0", "sqrt(144) + 2^10", "log(1000)", "7!"</li>
@@ -2054,6 +2068,55 @@ const AI = {
                 </ul>`,
             result: null
         };
+    },
+
+    // ---- Gemini bridge -----------------------------------------------------
+    // The local engine answers instantly and offline. Anything it cannot
+    // parse is sent to Google's Gemini via our own /api/ai serverless proxy
+    // (the API key lives server-side, never in this bundle). If the request
+    // fails — offline, no key configured, upstream error — the classic help
+    // message is shown instead, so the app never gets worse than before.
+
+    aiEndpoint() {
+        try {
+            if (/\.vercel\.app$/.test(location.hostname)) return '/api/ai';
+        } catch (e) { /* no location (tests) */ }
+        return 'https://nexus-calculator-ten.vercel.app/api/ai';
+    },
+
+    async askGemini(prompt) {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+        try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 20000);
+            const res = await fetch(this.aiEndpoint(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+                signal: ctrl.signal
+            });
+            clearTimeout(timer);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data && typeof data.text === 'string' && data.text.trim()
+                ? data.text.trim()
+                : null;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    // Gemini replies are untrusted text going into innerHTML: escape
+    // everything, then re-allow only **bold**, `code` and line breaks.
+    escapeForChat(text) {
+        const esc = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        return esc
+            .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
     },
 
     detectCurrencyInQuery(q) {
