@@ -26,7 +26,7 @@ const SYSTEM_PROMPT =
     'no markdown headings, lists with dashes, or tables (numbered steps and ' +
     '**bold** are fine).';
 
-const MODEL_FALLBACKS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+const MODEL_FALLBACKS = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 let resolvedModel = null; // cached while the lambda stays warm
 
 async function resolveModel(key) {
