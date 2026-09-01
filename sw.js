@@ -3,7 +3,7 @@
    deploys always show up when online; cache-first for images/fonts
    (rarely change); cache is the offline fallback. Bump CACHE_VERSION
    whenever you want to force-clear all previously cached assets. */
-const CACHE_VERSION = 'nexus-v4';
+const CACHE_VERSION = 'nexus-v5';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 

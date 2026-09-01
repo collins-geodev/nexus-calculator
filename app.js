@@ -1631,6 +1631,10 @@ const AI = {
         if (!response.unhandled && !wantsSteps) {
             this.hideTyping();
             this.addMessage('bot', response.message, response.result);
+            // Math-style answers show their working: fetch the numbered steps
+            // from Gemini and append them as a follow-up message. Conversions
+            // and date lookups (live rates, no real "steps") stay as-is.
+            if (this.isStepWorthy(query)) this.appendGeminiSteps(query);
             return;
         }
 
@@ -2110,6 +2114,22 @@ const AI = {
                 : null;
         } catch (e) {
             return null;
+        }
+    },
+
+    // Queries whose answer has meaningful working behind it — equations,
+    // stats, number theory, percentages, finance. Pure conversions and date
+    // lookups are excluded: they have live data or no steps worth showing.
+    isStepWorthy(query) {
+        return /solve|equation|\^|²|³|√|sqrt|cbrt|root\b|log|ln\b|median|mode|mean|average|variance|std|deviation|prime|gcd|lcm|choose|permut|factorial|!|bmi|percent|%|interest|compound/i.test(query);
+    },
+
+    async appendGeminiSteps(query) {
+        const text = await this.askGemini(
+            `Show the short numbered steps for how to arrive at the answer to: ${query}. End with the final answer.`);
+        if (text) {
+            this.addMessage('bot',
+                `${this.escapeForChat(text)}<div class="ai-source">✦ Steps by Gemini</div>`);
         }
     },
 
